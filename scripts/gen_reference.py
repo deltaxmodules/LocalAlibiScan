@@ -95,7 +95,7 @@ def technologies_md() -> str:
                 continue
             cell = lambda xs: ", ".join(f"`{x}`" for x in xs) or "—"
             extra = list(t.env) + list(t.config_files)
-            also = f" (also {', '.join(tr(f"category.{c}", lang="en").lower() for c in t.also)})" if t.also else ""
+            also = " (also " + ", ".join(tr(f"category.{c}", lang="en").lower() for c in t.also) + ")" if t.also else ""
             out.append(f"| **{t.name}**{also} | {cell(t.npm)} | {cell(t.pypi)} | {cell(t.imports)} | {cell(t.strings)} | {cell(extra)} |\n")
     return "".join(out)
 

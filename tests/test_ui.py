@@ -46,7 +46,7 @@ def test_ui_command_pins_network_rules() -> None:
     assert "--browser.gatherUsageStats=false" in cmd
     assert "--server.headless=true" in cmd
     assert "--server.port=9000" in cmd
-    assert cmd[-2:] == ["--", "/x"]
+    assert cmd[-2:] == ["--", str(Path("/x"))]
     assert dict(UI_FLAGS)["server.address"] == "127.0.0.1"
 
 
