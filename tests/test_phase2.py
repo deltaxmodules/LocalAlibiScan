@@ -218,7 +218,7 @@ def test_scan_does_not_touch_project_files(fixture_copy, config) -> None:
     before = tree_hash(root)
     scan(root, config)
     assert tree_hash(root) == before
-    assert sorted(p.name for p in (root / ".localalibi").iterdir()) == [".gitignore", "evidence.db", "project.json"]
+    assert sorted(p.name for p in (root / ".localalibi").iterdir()) == [".gitignore", "evidence.db", "history.db", "project.json"]
 
 
 def test_medium_project_under_30_seconds(tmp_path: Path, config) -> None:

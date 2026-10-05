@@ -27,7 +27,7 @@ h1{font-size:22px;margin:0 0 4px}
 .controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
 .controls input,.controls select{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg)}
 .controls input{flex:1;min-width:180px}
-.head,.project>summary{display:grid;grid-template-columns:2fr 1.6fr 1.6fr 1.2fr 1.4fr 1fr .8fr;gap:12px;align-items:start}
+.head,.project>summary{display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1.2fr 1.3fr 1fr .8fr .8fr;gap:12px;align-items:start}
 .head{padding:0 16px 6px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
 .project{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
 .project>summary{list-style:none;cursor:pointer;padding:12px 16px}
@@ -118,7 +118,7 @@ def _project_html(row: Row) -> str:
     return f"""<details class="project" data-name="{_e(row.name.lower())}" data-time="{_e(row.last_change.isoformat() if row.last_change else '')}" data-langs="{_e('|'.join(row.languages))}" data-search="{_e(search)}">
 <summary><div class="name">{_e(name)}<small>{_e(VERDICT_LABEL.get(row.verdict, row.verdict))}</small></div>
 <div>{_e(row.project_type)}</div><div class="chips">{_chips(row.stack)}</div><div class="chips">{_chips(row.databases)}</div>
-<div class="chips">{_chips(row.services)}</div><div>{_e(last)}{f' <small>({_e(source)})</small>' if source else ''}</div><div class="alerts">{alert_html}</div></summary>
+<div class="chips">{_chips(row.services)}</div><div>{_e(last)}{f' <small>({_e(source)})</small>' if source else ''}</div><div>{_e(row.changes)}</div><div class="alerts">{alert_html}</div></summary>
 <div class="body">{''.join(body)}</div></details>"""
 
 
@@ -145,7 +145,7 @@ def render_html(dashboard: Dashboard, generated_at: datetime | None = None) -> s
 <select id="lang" aria-label="Linguagem"><option value="">Todas as linguagens</option>{options}</select>
 <select id="sort" aria-label="Ordenar"><option value="time">Última alteração</option><option value="name">Nome</option></select>
 </div>
-<div class="head"><div>Projeto</div><div>Tipo</div><div>Stack principal</div><div>Base de dados</div><div>Serviços externos</div><div>Última alteração</div><div>Alertas</div></div>
+<div class="head"><div>Projeto</div><div>Tipo</div><div>Stack principal</div><div>Base de dados</div><div>Serviços externos</div><div>Última alteração</div><div>Mudou</div><div>Alertas</div></div>
 <div id="list">
 {projects}
 </div>

@@ -17,7 +17,8 @@ from .detectors.project_kind import classify
 from .fs import ProjectFS
 from .dashboard import build_dashboard
 from .html_report import render_html
-from .render import render_dashboard, render_kind, render_profile
+from .history import diff_snapshots, list_snapshots
+from .render import render_dashboard, render_diff, render_kind, render_profile
 from .scan import scan as run_scan
 
 app = typer.Typer(
@@ -175,6 +176,53 @@ def dashboard(
             config.user_config_dir / "dashboard.html", render_html(board)
         )
         console.print(f"Relatório HTML: [bold]{out}[/]", highlight=False)
+
+
+@app.command()
+def refresh(
+    folder: FolderArg = Path("."),
+    force: Annotated[
+        bool, typer.Option("--force", help="Analisa mesmo que a pasta não pareça um projeto.")
+    ] = False,
+) -> None:
+    """Nova análise e o que mudou desde a anterior, em linguagem de arquitetura."""
+    result = run_scan(folder, load_config(), force=force)
+    if result.profile is None:
+        render_kind(console, result.kind)
+        console.print("\n[dim]Análise não feita. Use --force para analisar mesmo assim.[/]")
+        raise typer.Exit(code=2)
+    console.print(f"[bold]{result.profile.root}[/]", highlight=False)
+    if result.first_scan or result.diff is None:
+        console.print("[dim]Primeira análise: o próximo refresh vai comparar com esta.[/]")
+        return
+    render_diff(console, result.diff)
+
+
+@app.command()
+def history(folder: FolderArg = Path(".")) -> None:
+    """Lista as análises anteriores, com um resumo de uma linha."""
+    snaps = list_snapshots(folder)
+    if not snaps:
+        console.print("[dim]Sem histórico. Corra «las scan» ou «las refresh» primeiro.[/]")
+        raise typer.Exit(code=2)
+    table = Table(title=str(Path(folder).resolve()), title_justify="left")
+    table.add_column("#", justify="right")
+    table.add_column("Data")
+    table.add_column("HEAD")
+    table.add_column("Ficheiros", justify="right")
+    table.add_column("Mudanças")
+    prev = None
+    for snap in snaps:
+        summary = "primeira análise" if prev is None else diff_snapshots(prev, snap).summary()
+        table.add_row(
+            str(snap.id),
+            snap.scanned_at.astimezone().strftime("%Y-%m-%d %H:%M"),
+            (snap.git_head or "—")[:8],
+            str(len(snap.files)),
+            summary,
+        )
+        prev = snap
+    console.print(table)
 
 
 def _human_size(size: int) -> str:

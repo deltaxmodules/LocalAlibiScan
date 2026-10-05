@@ -13,6 +13,7 @@ from .models import Claim, Evidence, ProjectProfile
 
 if TYPE_CHECKING:
     from .dashboard import Dashboard
+    from .history import Diff
 
 STATUS_STYLE = {
     "confirmed": "green",
@@ -182,11 +183,12 @@ def render_dashboard(console: Console, board: Dashboard) -> None:
     table.add_column("BD", overflow="fold", ratio=2)
     table.add_column("Serviços", overflow="fold", ratio=2)
     table.add_column("Alterado", no_wrap=True)
+    table.add_column("Mudou", no_wrap=True)
     table.add_column("Alertas", no_wrap=True)
     for row in board.rows:
         name = ("≈ " if row.verdict == "probable_project" else "") + row.name
         if row.error:
-            table.add_row(escape(name), "[red]erro[/]", escape(row.error), "", "", "", "")
+            table.add_row(escape(name), "[red]erro[/]", escape(row.error), "", "", "", "", "")
             continue
         last = row.last_change.astimezone().strftime("%Y-%m-%d") if row.last_change else "?"
         if row.profile and row.profile.last_change_source == "git":
@@ -205,6 +207,7 @@ def render_dashboard(console: Console, board: Dashboard) -> None:
             escape(", ".join(row.databases) or "—"),
             escape(", ".join(row.services) or "—"),
             last,
+            escape(row.changes),
             alert_text,
         )
     console.print(table)
@@ -213,3 +216,24 @@ def render_dashboard(console: Console, board: Dashboard) -> None:
         "≈ provável projeto / inferido · ⚠ contradições · ? por determinar[/]",
         highlight=False,
     )
+
+
+DIFF_STYLE = {"+": "green", "-": "red", "~": "yellow", "⚠": "bold red"}
+
+
+def render_diff(console: Console, diff: Diff) -> None:
+    if diff.empty:
+        console.print("[dim]Sem alterações desde a análise anterior.[/]")
+        return
+    for title, items in (
+        ("Novo", diff.added),
+        ("Removido", diff.removed),
+        ("Alterado", diff.changed),
+        ("Alertas", diff.alerts),
+    ):
+        if not items:
+            continue
+        console.print(f"\n[bold underline]{title}[/]")
+        for ch in items:
+            loc = f"  [dim]←[/] [cyan]{escape(ch.location)}[/]" if ch.location else ""
+            console.print(f"  [{DIFF_STYLE[ch.sign]}]{ch.sign}[/] {escape(ch.text)}{loc}", highlight=False)

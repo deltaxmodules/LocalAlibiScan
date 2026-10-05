@@ -12,6 +12,7 @@ from .config import Config, load_config
 from .detectors import run_detectors
 from .detectors.project_kind import KindResult, classify
 from .fs import ProjectFS
+from .history import Diff, diff_snapshots, file_digests, last_two, save_snapshot
 from .models import ProjectProfile
 from .project import Project
 from .storage import save_evidence
@@ -23,6 +24,9 @@ class ScanResult:
     profile: ProjectProfile | None = None  # None quando a análise não correu
     output: Path | None = None
     cached: bool = False
+    # Fase 5: comparação com a análise anterior (None na primeira análise).
+    diff: Diff | None = None
+    first_scan: bool = False
 
 
 @dataclass
@@ -92,6 +96,10 @@ def scan(
             project.fs.output_dir / "project.json", profile.model_dump_json(indent=2) + "\n"
         )
         save_evidence(project.fs, profile)
+        save_snapshot(project.fs, profile, file_digests(project))
+        prev, cur = last_two(project.root)
+        diff = diff_snapshots(prev, cur) if prev and cur else None
+        return ScanResult(kind=kind, profile=profile, output=output, diff=diff, first_scan=prev is None)
     return ScanResult(kind=kind, profile=profile, output=output)
 
 

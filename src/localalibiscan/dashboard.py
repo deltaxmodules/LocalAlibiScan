@@ -22,6 +22,8 @@ class Row:
     profile: ProjectProfile | None = None
     cached: bool = False
     error: str | None = None
+    # "Mudou desde a última vez": resumo do diff, "—" (cache) ou "novo".
+    changes: str = "—"
 
     def claims(self, prefix: str) -> list[Claim]:
         if not self.profile:
@@ -106,6 +108,10 @@ def build_dashboard(
         try:
             result = scan(path, config, use_cache=use_cache)
             row.profile, row.cached = result.profile, result.cached
+            if result.first_scan:
+                row.changes = "novo"
+            elif result.diff is not None:
+                row.changes = "—" if result.diff.empty else result.diff.summary()
             row.verdict = result.kind.verdict
             if result.profile is None:
                 row.error = f"não analisado: veredito «{result.kind.verdict}»"
