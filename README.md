@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="site/public/brand/logo-dark.png">
-    <img src="site/public/brand/logo.png" alt="LocalAlibiScan — every claim has an alibi" width="560">
+    <source media="(prefers-color-scheme: dark)" srcset="https://deltaxmodules.github.io/LocalAlibiScan/brand/logo-dark.png">
+    <img src="https://deltaxmodules.github.io/LocalAlibiScan/brand/logo.png" alt="LocalAlibiScan — every claim has an alibi" width="560">
   </picture>
 </p>
 
@@ -15,7 +15,7 @@ LocalAlibiScan is a local, read-only tool that tells you what every project on
 your disk is, what state it is in and what changed — and **proves every
 statement with the file and line it came from**.
 
-![las dashboard and a README that lies, in a real terminal](site/public/img/localalibiscan-demo.gif)
+![las dashboard and a README that lies, in a real terminal](https://deltaxmodules.github.io/LocalAlibiScan/img/localalibiscan-demo.gif)
 
 ## Why
 
@@ -30,7 +30,7 @@ statement with the file and line it came from**.
 5. **Works without an LLM.** Everything essential is deterministic. A local
    [Ollama](https://ollama.com) model is an extra, never a requirement.
 
-![A README that says PostgreSQL while the code uses SQLite](docs/img/contradiction.svg)
+![A README that says PostgreSQL while the code uses SQLite](https://deltaxmodules.github.io/LocalAlibiScan/img/contradiction.svg)
 
 ## Install
 
@@ -106,7 +106,7 @@ without a declared dependency is `✓` with a note.
 - **Docs vs code** — contradictions, "only in the docs" and "not documented".
 - **History** — snapshots with file hashes (works without git).
 
-Known limitations are listed in [`docs/limitacoes.md`](docs/limitacoes.md).
+Known limitations are listed in [`docs/limitacoes.md`](https://github.com/deltaxmodules/LocalAlibiScan/blob/main/docs/limitacoes.md).
 
 ## Guarantees
 
@@ -150,12 +150,12 @@ uv venv -p 3.12 .venv && uv pip install -p .venv -e '.[dev]'
 .venv/bin/pytest
 ```
 
-The tool was built phase by phase from [`SPEC.md`](SPEC.md) (in Portuguese);
-contributor rules live in [`CLAUDE.md`](CLAUDE.md). Test projects are in
+The tool was built phase by phase from [`SPEC.md`](https://github.com/deltaxmodules/LocalAlibiScan/blob/main/SPEC.md) (in Portuguese);
+contributor rules live in [`CLAUDE.md`](https://github.com/deltaxmodules/LocalAlibiScan/blob/main/CLAUDE.md). Test projects are in
 `tests/fixtures/`. The manual is in `site/` (VitePress; `cd site && npx vitepress dev .`), its
 reference pages are generated with `python scripts/gen_reference.py`, and the demo video and GIF
-are recorded with `scripts/demo-video.sh` ([how](docs/video/PLANO.md)).
+are recorded with `scripts/demo-video.sh` ([how](https://github.com/deltaxmodules/LocalAlibiScan/blob/main/docs/video/PLANO.md)).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/deltaxmodules/LocalAlibiScan/blob/main/LICENSE)

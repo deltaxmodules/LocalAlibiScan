@@ -52,6 +52,7 @@ uv venv -p 3.12 .venv && uv pip install -p .venv -e '.[dev]'
 - Usar a fixture `config` (pasta pessoal isolada em tmp) nos testes que chamam `classify`/`scan`.
 - Testes que analisam fixtures devem confirmar só leitura com `tree_hash` antes/depois.
 - Depois de cada fase: rever, commit com a etiqueta `fase-N`.
+- README: imagens e links sempre com URLs absolutos (site de docs / GitHub) — o README é também a página do PyPI, onde caminhos relativos não funcionam.
 - CI (`.github/workflows/ci.yml`): pytest em Linux/macOS/Windows e instalação limpa com pipx. Os ficheiros de saída do produto indicam sempre `encoding="utf-8"`.
 - Manual: `site/` (VitePress, inglês), publicado no GitHub Pages por `.github/workflows/pages.yml`. `site/reference/commands.md` e `technologies.md` são gerados por `scripts/gen_reference.py` (há um teste que falha se estiverem desatualizados: depois de mudar a CLI ou `tech.py`, correr o script).
 - Marca: `site/public/brand/` (logótipo e ícone, versões clara/escura); favicons e `og.png` derivados; ícones de 64 px em `src/localalibiscan/assets/` (embutidos no relatório HTML).
