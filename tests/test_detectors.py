@@ -21,6 +21,12 @@ def test_registry_order() -> None:
         "entry_points",
         "structure",
         "docs",
+        "database",
+        "orm",
+        "frameworks",
+        "external_services",
+        "routes",
+        "important_files",
     ]
 
 

@@ -9,7 +9,7 @@ from typing import Any
 
 from .config import Config, load_config
 from .fs import FileNotReadable, ProjectFS
-from .models import Evidence, FileEntry, utcnow
+from .models import Claim, Evidence, FileEntry, utcnow
 
 
 class Project:
@@ -21,6 +21,8 @@ class Project:
         # Dados derivados partilhados entre detetores (ex.: manifestos lidos).
         self.cache: dict[str, Any] = {}
         self._text: dict[str, str | None] = {}
+        # Claims produzidos até agora, pela ordem dos detetores.
+        self.claims: list[Claim] = []
 
     @cached_property
     def files(self) -> list[FileEntry]:

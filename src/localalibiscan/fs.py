@@ -85,6 +85,12 @@ class ProjectFS:
         path.write_bytes(content)
         return path
 
+    def writable_path(self, target: str | os.PathLike[str]) -> Path:
+        """Caminho verificado para quem escreve por outra via (ex.: sqlite3)."""
+        path = self._check_writable(target)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return path
+
     def delete(self, target: str | os.PathLike[str]) -> None:
         self._check_writable(target).unlink(missing_ok=True)
 

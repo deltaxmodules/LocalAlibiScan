@@ -11,6 +11,7 @@ from .detectors import run_detectors
 from .detectors.project_kind import KindResult, classify
 from .models import ProjectProfile
 from .project import Project
+from .storage import save_evidence
 
 
 @dataclass
@@ -43,6 +44,7 @@ def scan(path: str | Path, config: Config | None = None, *, force: bool = False,
         output = project.fs.write_text(
             project.fs.output_dir / "project.json", profile.model_dump_json(indent=2) + "\n"
         )
+        save_evidence(project.fs, profile)
     return ScanResult(kind=kind, profile=profile, output=output)
 
 

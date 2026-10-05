@@ -30,18 +30,26 @@ SECTIONS: list[tuple[str, str]] = [
     ("language", "Linguagens"),
     ("entry_point", "Arranque"),
     ("structure", "Estrutura"),
+    ("database", "Base de dados"),
+    ("orm", "ORM"),
+    ("framework", "Frameworks"),
+    ("service", "Serviços externos"),
+    ("route", "Rotas"),
+    ("important_files", "Ficheiros importantes"),
     ("docs", "Documentação"),
     ("manifest", "Manifestos"),
     ("dependency", "Dependências"),
     ("script", "Scripts"),
 ]
-COMPACT_CATEGORIES = frozenset({"dependency", "script"})
+COMPACT_CATEGORIES = frozenset({"dependency", "script", "route"})
 
 
 def format_value(claim: Claim) -> str:
     value: Any = claim.value
     if value is None:
         return "não determinado" if claim.status == "unknown" else "—"
+    if claim.category == "route" and isinstance(value, dict):
+        return f"[{value.get('framework')}]" + (f" {value['handler']}()" if value.get("handler") else "")
     if claim.category == "dependency" and isinstance(value, dict):
         return f"{value.get('spec') or '*'}" + (" (dev)" if value.get("dev") else "")
     if claim.id == "project.kind":
@@ -76,6 +84,15 @@ def render_claim(console: Console, claim: Claim, *, all_evidence: bool = False) 
         if all_evidence:
             for ev in claim.evidence[1:]:
                 console.print(f"      └ {format_evidence(ev)}", highlight=False)
+        return
+
+    if claim.id == "files.important" and isinstance(claim.value, list):
+        console.print(f"{head}:", highlight=False)
+        for i, item in enumerate(claim.value, start=1):
+            console.print(
+                f"      {i:>2}. [cyan]{escape(item['path'])}[/]  [dim]{escape(item['reason'])}[/]",
+                highlight=False,
+            )
         return
 
     console.print(f"{head}: {value}", highlight=False)

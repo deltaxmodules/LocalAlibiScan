@@ -19,6 +19,10 @@ Ferramenta local que diz o que cada projeto é, como está e o que mudou, e prov
 - `src/localalibiscan/fs.py` é a **única** camada que escreve ou lê conteúdo de ficheiros do projeto analisado (os detetores leem via `Project.text()`/`lines()`). Nenhum outro módulo usa `open()`, `Path.write_*`, `os.remove`, `shutil` sobre o projeto. Escrever fora das pastas permitidas lança `ReadOnlyViolation`. (Exceção: ler os nossos próprios ficheiros em `.localalibi/`.)
 - Detetores: `src/localalibiscan/detectors/`. Cada um é uma classe com `detect(project) -> list[Claim]`, decorada com `@register` e importada em `detectors/__init__.py` (a ordem de importação é a ordem de execução). Dados partilhados entre detetores vivem em funções com cache em `project.cache` (ex.: `parse_manifests`), nunca em chamadas diretas a outro detetor.
 - `detectors/project_kind.py` decide o veredito da pasta e corre antes de tudo (fora do REGISTRY). O painel (Fase 3) reutiliza `classify`/`find_subprojects`.
+- Detetores podem ler os Claims já produzidos (`project.claims`), por categoria/id — é o contrato estável — mas nunca chamar outro detetor.
+- Código: `code/parser.py` (tree-sitter → `FileFacts`) e `code/index.py` (`code_index(project)`, resolução de imports locais, grafo de imports). Nunca se executa código analisado.
+- Tecnologias: tabela única em `tech.py` (dependências, imports, strings, env vars, ficheiros de config, nomes em docs). Regra de promoção em `detectors/technologies.py`. Para suportar uma nova tecnologia basta acrescentar uma linha a `TECHS`.
+- SQLite: `storage.py`; os caminhos passam por `ProjectFS.writable_path`.
 - Todo o claim que não é `unknown` tem pelo menos uma `Evidence` (há teste para isso).
 - Git só via `subprocess` com comandos de leitura (`log`, `status`, `rev-parse`).
 - Constantes e limiares vivem em `src/localalibiscan/config.py`.
