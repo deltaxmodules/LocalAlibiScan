@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "localalibiscan"
-version = "0.2.0"
+version = "0.2.1"
 description = "Every claim has an alibi. Local tool that profiles every project on your disk and proves each claim with file and line."
 readme = "README.md"
 license = "MIT"

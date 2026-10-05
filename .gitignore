@@ -13,3 +13,6 @@ __pycache__/
 /site/node_modules/
 /site/.vitepress/dist/
 /site/.vitepress/cache/
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
