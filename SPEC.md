@@ -12,7 +12,7 @@ Este documento serve de guia para construir o LocalAlibiScan com o Claude Code, 
 | 0 a 9 | Feitas | `fase-0` … `fase-9` |
 | 10 | Feita | `fase-10` |
 
-Publicado: PyPI `localalibiscan` 0.1.2 (MIT); a 0.2.0 traz a Fase 9. Feito para além do pedido nas fases: comando `las config`, manual em inglês (`site/`, VitePress, no GitHub Pages) com a referência gerada a partir do código, vídeo e GIF de demonstração (`scripts/demo-video.sh`), marca (logótipo e ícones) e CI em Linux/macOS/Windows.
+Publicado: PyPI `localalibiscan` 0.2.1 (MIT); a 0.2.0 trouxe as Fases 9 e 10 e a 0.2.1 corrige a ajuda do `las ui`. Feito para além do pedido nas fases: comando `las config`, manual em inglês (`site/`, VitePress, no GitHub Pages) com a referência gerada a partir do código, vídeo e GIF de demonstração (`scripts/demo-video.sh`), marca (logótipo e ícones) e CI em Linux/macOS/Windows.
 
 ---
 
