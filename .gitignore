@@ -1,0 +1,9 @@
+# Âncoras (/) para não esconder pastas com o mesmo nome dentro de tests/fixtures/
+/.venv/
+/dist/
+/build/
+*.egg-info/
+__pycache__/
+.pytest_cache/
+.localalibi/
+.DS_Store
