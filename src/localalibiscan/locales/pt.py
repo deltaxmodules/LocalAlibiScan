@@ -328,7 +328,7 @@ model = "qwen2.5-coder:7b"
 timeout = 180
 """,
     # Fase 10: interface gráfica (ui.py) e comando `las ui`.
-    "cli.ui.help": "Abre a interface gráfica local no browser (precisa do extra opcional: pipx install 'localalibiscan[ui]').",
+    "cli.ui.help": "Abre a interface gráfica local no browser (precisa do extra opcional “ui”; se faltar, diz como o instalar).",
     "cli.opt.port": "Porta da interface local (só escuta em 127.0.0.1).",
     "cli.opt.no_browser": "Não abre o browser; só mostra o endereço.",
     "cli.ui.missing": "A interface gráfica precisa do Streamlit, que é um extra opcional. Instale-o com:",
