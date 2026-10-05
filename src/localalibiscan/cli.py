@@ -18,11 +18,20 @@ from .detectors.project_kind import classify
 from .fs import ProjectFS
 from .dashboard import build_dashboard
 from .html_report import render_html
+from .ask import ask as ask_project
 from .drafting import Overview, generate_overview, overview_markdown
 from .drafting import explain as explain_project
 from .history import diff_snapshots, list_snapshots
 from .llm import OllamaClient
-from .render import render_dashboard, render_diff, render_explanation, render_kind, render_profile
+from .project import Project
+from .render import (
+    render_ask,
+    render_dashboard,
+    render_diff,
+    render_explanation,
+    render_kind,
+    render_profile,
+)
 from .scan import scan as run_scan
 
 app = typer.Typer(
@@ -247,15 +256,7 @@ def explain(
         console.print("\n[dim]Não é um projeto: nada para explicar. Use «las scan --force» primeiro.[/]")
         raise typer.Exit(code=2)
 
-    client: OllamaClient | None = None
-    llm_off_reason = None
-    if no_llm:
-        llm_off_reason = "desligada com --no-llm"
-    else:
-        client = OllamaClient(config.ollama_url, model or config.ollama_model, config.ollama_timeout)
-        if not client.available():
-            llm_off_reason = f"Ollama ou modelo {client.model} não disponível em {config.ollama_url}"
-            client = None
+    client, llm_off_reason = _llm_client(config, no_llm, model)
 
     pfs = ProjectFS(result.kind.path, config)
 
@@ -277,6 +278,43 @@ def explain(
         overview_markdown(exp, overview, datetime.now().strftime("%Y-%m-%d %H:%M")),
     )
     console.print(f"\n[dim]Resumo guardado em {out}[/]", highlight=False)
+
+
+@app.command()
+def ask(
+    folder: Annotated[Path, typer.Argument(exists=True, file_okay=False, help="Pasta do projeto.")],
+    question: Annotated[str, typer.Argument(help="Pergunta, ex.: \"Onde é feita a autenticação?\"")],
+    no_llm: Annotated[
+        bool, typer.Option("--no-llm", help="Não usa o Ollama: mostra só as evidências.")
+    ] = False,
+    model: Annotated[
+        str | None, typer.Option("--model", help="Modelo do Ollama (por omissão o da configuração).")
+    ] = None,
+) -> None:
+    """Pergunta livre: procura evidências primeiro; a IA (opcional) só responde com elas."""
+    config = load_config()
+    result = run_scan(folder, config, use_cache=True)
+    if result.profile is None:
+        render_kind(console, result.kind)
+        console.print("\n[dim]Não é um projeto. Use «las scan --force» primeiro.[/]")
+        raise typer.Exit(code=2)
+
+    client, note = _llm_client(config, no_llm, model)
+    project = Project(result.kind.path, config)
+    with console.status("A procurar evidências…" + (" e a redigir…" if client else "")):
+        answer = ask_project(project, result.profile, question, client)
+    render_ask(console, answer, note)
+    if not answer.found:
+        raise typer.Exit(code=1)
+
+
+def _llm_client(config, no_llm: bool, model: str | None) -> tuple[OllamaClient | None, str | None]:
+    if no_llm:
+        return None, "desligada com --no-llm"
+    client = OllamaClient(config.ollama_url, model or config.ollama_model, config.ollama_timeout)
+    if not client.available():
+        return None, f"Ollama ou modelo {client.model} não disponível em {config.ollama_url}"
+    return client, None
 
 
 def _human_size(size: int) -> str:

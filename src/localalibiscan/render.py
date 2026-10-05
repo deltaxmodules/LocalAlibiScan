@@ -13,6 +13,7 @@ from .models import Claim, Evidence, ProjectProfile
 
 if TYPE_CHECKING:
     from .dashboard import Dashboard
+    from .ask import AskResult
     from .drafting import Explanation
     from .history import Diff
 
@@ -271,3 +272,28 @@ def render_explanation(console: Console, exp: Explanation) -> None:
                 f"  [{style}]{claim.symbol}[/] {escape(claim.label)}: {escape(format_value(claim))}{loc}",
                 highlight=False,
             )
+
+
+def render_ask(console: Console, result: AskResult, llm_note: str | None) -> None:
+    console.print(f"[bold]Pergunta:[/] {escape(result.question)}", highlight=False)
+    if not result.found:
+        console.print("\n[yellow]Não encontrei evidências sobre isto.[/] [dim](a LLM não foi chamada)[/]")
+        if result.suggestions:
+            console.print(f"[dim]Termos que existem neste projeto:[/] {escape(', '.join(result.suggestions))}", highlight=False)
+        return
+    if result.answer and result.answer.sentences:
+        console.print(f"\n[yellow]≈ Resposta redigida pela IA a partir das evidências[/] [dim](modelo {escape(result.model or '')})[/]")
+        for sentence in result.answer.sentences:
+            console.print(f"  [yellow]≈[/] {escape(sentence.text)} [dim]\\[{escape(', '.join(sentence.ids))}][/]", highlight=False)
+        if result.answer.removed:
+            console.print(f"  [dim]{len(result.answer.removed)} frase(s) removida(s) pelo validador.[/]")
+    elif llm_note or result.llm_error:
+        console.print(f"\n[dim]Redação por IA desligada: {escape(result.llm_error or llm_note or '')}. Só evidências.[/]")
+    else:
+        console.print("\n[dim]A IA não produziu frases com citações válidas. Só evidências.[/]")
+
+    console.print("\n[bold underline]Evidências encontradas[/]")
+    for e in result.excerpts:
+        console.print(f"  [cyan]{escape(e.file)}:{e.start}-{e.end}[/]  [dim]{escape('; '.join(e.reasons))}[/]", highlight=False)
+        for n, text in zip(range(e.start, e.end + 1), e.lines):
+            console.print(f"    [dim]{n:>4}[/] {escape(text.rstrip()[:150])}", highlight=False)
