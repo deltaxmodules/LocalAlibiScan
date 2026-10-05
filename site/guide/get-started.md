@@ -5,10 +5,10 @@
 LocalAlibiScan needs **Python 3.11+** and runs on macOS, Linux and Windows.
 
 ```bash
-pipx install git+https://github.com/deltaxmodules/LocalAlibiScan
+pipx install localalibiscan
 ```
 
-(Once it is on PyPI: `pipx install localalibiscan`.) This installs two equivalent commands, `localalibiscan` and the shortcut `las`.
+([PyPI page](https://pypi.org/project/localalibiscan/); the latest development version: `pipx install git+https://github.com/deltaxmodules/LocalAlibiScan`.) This installs two equivalent commands, `localalibiscan` and the shortcut `las`.
 
 ```bash
 las --version

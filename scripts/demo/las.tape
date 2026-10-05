@@ -81,7 +81,7 @@ Sleep 4s
 
 # Cartão final
 Hide
-Type "scene 'Local · read-only · open source' 'pipx install git+https://github.com/deltaxmodules/LocalAlibiScan'" Enter
+Type "scene 'Local · read-only · open source' 'pipx install localalibiscan'" Enter
 Type "print -P '  %F{250}Manual: https://deltaxmodules.github.io/LocalAlibiScan/%f'" Enter
 Show
 Sleep 6s

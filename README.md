@@ -35,8 +35,7 @@ statement with the file and line it came from**.
 ## Install
 
 ```bash
-pipx install localalibiscan            # once published on PyPI
-pipx install git+https://github.com/deltaxmodules/LocalAlibiScan   # today
+pipx install localalibiscan
 ```
 
 Python 3.11+ on macOS, Linux or Windows. The commands `localalibiscan` and the
