@@ -70,6 +70,6 @@ export default defineConfig({
     search: { provider: 'local' },
     socialLinks: [{ icon: 'github', link: 'https://github.com/deltaxmodules/LocalAlibiScan' }],
     outline: { level: [2, 3], label: 'On this page' },
-    footer: { message: 'Local · read-only · open source', copyright: 'LocalAlibiScan by deltaXmodules' },
+    footer: { message: 'MIT License · local · read-only · open source', copyright: 'LocalAlibiScan by deltaXmodules' },
   },
 });

@@ -7,6 +7,8 @@ name = "localalibiscan"
 version = "0.1.1"
 description = "Every claim has an alibi. Local tool that profiles every project on your disk and proves each claim with file and line."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [{ name = "deltaxmodules" }]
 keywords = ["cli", "code-analysis", "dashboard", "documentation", "tree-sitter", "developer-tools"]
@@ -47,7 +49,7 @@ las = "localalibiscan.cli:main"
 packages = ["src/localalibiscan"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/", "tests/", "docs/", "README.md", "SPEC.md", "CLAUDE.md", "pyproject.toml"]
+include = ["src/", "tests/", "docs/", "README.md", "SPEC.md", "CLAUDE.md", "LICENSE", "pyproject.toml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -57,4 +57,4 @@ uv venv -p 3.12 .venv && uv pip install -p .venv -e '.[dev]'
 - Marca: `site/public/brand/` (logótipo e ícone, versões clara/escura); favicons e `og.png` derivados; ícones de 64 px em `src/localalibiscan/assets/` (embutidos no relatório HTML).
 - Página de exemplo: `site/public/example/index.html`. Capturas SVG em `docs/img/`.
 - Vídeo e GIF de demonstração: `scripts/demo-video.sh` (VHS em Docker + Ollama local), guião em `docs/video/PLANO.md`. Se mudar um texto que uma cena mostra, refazer o vídeo.
-- Publicação no PyPI: `.github/workflows/publish.yml` (trusted publishing ao publicar uma release). A licença ainda está por decidir.
+- Publicação no PyPI: `.github/workflows/publish.yml` (trusted publishing ao publicar uma release). Licença: MIT.

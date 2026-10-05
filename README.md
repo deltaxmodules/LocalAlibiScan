@@ -159,4 +159,4 @@ are recorded with `scripts/demo-video.sh` ([how](docs/video/PLANO.md)).
 
 ## License
 
-To be decided.
+[MIT](LICENSE)
