@@ -17,6 +17,9 @@ hero:
       text: How claims work
       link: /guide/claims
     - theme: alt
+      text: Graphical interface
+      link: /guide/ui
+    - theme: alt
       text: Example report
       link: https://deltaxmodules.github.io/LocalAlibiScan/example/
 
@@ -36,6 +39,9 @@ features:
   - title: Works without an LLM
     details: Everything essential is deterministic (manifests, tree-sitter, rules). Ollama on localhost is an extra, and every AI sentence must cite a fact.
     link: /guide/explain
+  - title: Terminal or window
+    details: Every command works in the terminal; `las ui` shows the same facts and evidence in a local graphical interface (optional extra, 127.0.0.1 only).
+    link: /guide/ui
   - title: Read-only by construction
     details: It never runs your code, never modifies your files and never goes online. The only writes go to a .localalibi/ folder that ignores itself in git.
     link: /guide/privacy
@@ -46,6 +52,17 @@ features:
 <video controls muted playsinline preload="none" poster="/video/localalibiscan-demo.jpg" src="/video/localalibiscan-demo.mp4" style="width:100%;border-radius:8px" aria-label="LocalAlibiScan in a terminal: the dashboard of a projects folder, a scan with file and line evidence, a README that says PostgreSQL while the code uses SQLite, a refresh showing a new OpenAI service and route, a question answered by a local model from cited evidence, and folder verdicts"></video>
 
 A real terminal, real open-source projects and a real local model (`qwen2.5-coder:7b` on Ollama): the dashboard, a scan with evidence, a README that lies, what changed after a commit, a question answered from cited code, and honest folder verdicts. No sound; a caption opens each scene. [How the video is made](https://github.com/deltaxmodules/LocalAlibiScan/blob/main/docs/video/PLANO.md).
+
+## Prefer a window?
+
+```bash
+pipx install 'localalibiscan[ui]'
+las ui ~/code
+```
+
+![The graphical interface: the dashboard of a projects folder](/img/ui-dashboard.jpg)
+
+The same dashboard, every claim with its evidence and the lines around it, what changed, *explain* and *ask* — in a local interface that listens on `127.0.0.1` only. [More about the interface](/guide/ui).
 
 ## Who is it for?
 

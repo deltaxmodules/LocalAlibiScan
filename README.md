@@ -41,13 +41,8 @@ pipx install localalibiscan
 Python 3.11+ on macOS, Linux or Windows. The commands `localalibiscan` and the
 shortcut `las` are equivalent.
 
-Prefer a window to a terminal? The optional graphical interface (Streamlit) adds
-`las ui`:
-
-```bash
-pipx install 'localalibiscan[ui]'
-las ui ~/code                   # opens http://127.0.0.1:8501 in your browser
-```
+Prefer a window to a terminal? Install the optional extra for the
+[graphical interface](#graphical-interface): `pipx install 'localalibiscan[ui]'`.
 
 ## Quick start
 
@@ -72,6 +67,27 @@ las ui ~/code                   # the same, in a local graphical interface (extr
 The interface is in English by default and also speaks Portuguese:
 `las --lang-ui pt scan .`, `LOCALALIBI_LANG=pt`, or `language = "pt"` under `[ui]`
 in the configuration. The facts are the same in every language.
+
+## Graphical interface
+
+The same facts and evidence in a window: `las ui` opens a local interface
+(Streamlit) in your browser. It is an optional extra, so the base install stays small.
+
+```bash
+pipx install 'localalibiscan[ui]'
+las ui ~/code                   # http://127.0.0.1:8501 — listens on this machine only
+```
+
+![las ui: the dashboard of a projects folder](https://deltaxmodules.github.io/LocalAlibiScan/img/ui-dashboard.jpg)
+
+Pick a project to see every claim by section, open its evidence with the lines
+around the cited one, compare any two analyses, and use *explain* and *ask*
+(with or without the local AI). English or Portuguese, from the sidebar.
+
+![las ui: a README that says PostgreSQL while the code uses SQLite, with the cited lines](https://deltaxmodules.github.io/LocalAlibiScan/img/ui-evidence.jpg)
+
+It keeps every guarantee below: read-only, no project code run, `127.0.0.1`
+only and Streamlit's usage statistics off. [More in the manual](https://deltaxmodules.github.io/LocalAlibiScan/guide/ui).
 
 ## Claims
 

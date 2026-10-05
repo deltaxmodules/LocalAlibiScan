@@ -10,10 +10,15 @@ las ui ~/code --port 8600 --no-browser
 
 `las ui` starts a local [Streamlit](https://streamlit.io) server and opens `http://127.0.0.1:8501`. Stop it with Ctrl+C.
 
+![The dashboard in the graphical interface](/img/ui-dashboard.jpg)
+
 ## What you see
 
 - **Projects**: the [dashboard](./dashboard) table, with a text filter and a programming-language filter. Pick a project to open it below.
 - **Profile**: the counts per status and every claim by section. Each claim opens its evidence with the lines around the cited one (`→` marks it). Dependencies, scripts and routes are shown as tables. You can hide statuses (for example, only ⚠ contradictions).
+
+![A contradiction with its evidence: the README lines that say PostgreSQL](/img/ui-evidence.jpg)
+
 - **What changed**: every previous analysis, and the [differences](./refresh) between any two of them.
 - **Explain** and **Ask**: the same as [`las explain`](./explain) and [`las ask`](./ask). The *Local AI* switch in the sidebar turns Ollama on or off; without it you get facts and evidence only.
 

@@ -26,6 +26,7 @@ from localalibiscan.detectors.project_kind import VERDICT_SYMBOL, KindResult, cl
 from localalibiscan.drafting import Explanation
 from localalibiscan.drafting import explain as explain_project
 from localalibiscan.history import Diff, diff_snapshots, list_snapshots
+from localalibiscan.html_report import display_path
 from localalibiscan.i18n import claim_label, claim_note, evidence_snippet, item_reason, t, tn
 from localalibiscan.llm import OllamaClient
 from localalibiscan.models import STATUS_SYMBOL, Claim, Evidence, ProjectProfile
@@ -114,7 +115,8 @@ def symbol_md(status: str) -> str:
 
 
 def _initial_folder(argv: list[str]) -> str:
-    return str(Path(argv[0]).expanduser().resolve()) if argv else str(Path.cwd())
+    # A pasta pessoal aparece como "~" (capturas e ecrãs partilhados).
+    return display_path(Path(argv[0]).expanduser().resolve() if argv else Path.cwd())
 
 
 def main() -> None:
@@ -190,7 +192,7 @@ def _cached_project(root: str, nonce: int) -> Project:
 
 def _kind_view(kind: KindResult) -> None:
     st.subheader(f"{VERDICT_SYMBOL[kind.verdict]} {md(verdict_label(kind.verdict))}")
-    st.caption(md(kind.path))
+    st.caption(md(display_path(kind.path)))
     note = claim_note(kind.claim)
     if note:
         st.markdown(f"*{md(note)}*")
@@ -206,7 +208,7 @@ def _kind_view(kind: KindResult) -> None:
 
 def _dashboard_view(board: Dashboard) -> Row | None:
     st.title(t("gui.dashboard.title"))
-    st.caption(md(board.root))
+    st.caption(md(display_path(board.root)))
     languages = sorted({lang for row in board.rows for lang in row.languages}, key=str.lower)
     c1, c2 = st.columns([3, 1])
     text = c1.text_input(t("gui.filter"), key="filter", placeholder=t("gui.filter.placeholder"))
@@ -234,7 +236,7 @@ def _project_view(config: Config, root: Path, *, nonce: int, use_llm: bool, row:
     project = _cached_project(profile.root, nonce)
 
     st.header(md(Path(profile.root).name))
-    st.caption(md(profile.root))
+    st.caption(md(display_path(profile.root)))
     if profile.verdict == "probable_project":
         st.warning(f"{t('profile.probable.title')} {t('profile.probable.text')}")
 

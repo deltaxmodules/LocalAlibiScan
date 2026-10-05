@@ -59,6 +59,6 @@ uv venv -p 3.12 .venv && uv pip install -p .venv -e '.[dev]'
 - CI (`.github/workflows/ci.yml`): pytest em Linux/macOS/Windows e instalação limpa com pipx. Os ficheiros de saída do produto indicam sempre `encoding="utf-8"`.
 - Manual: `site/` (VitePress, inglês), publicado no GitHub Pages por `.github/workflows/pages.yml`. `site/reference/commands.md` e `technologies.md` são gerados por `scripts/gen_reference.py` (há um teste que falha se estiverem desatualizados: depois de mudar a CLI ou `tech.py`, correr o script).
 - Marca: `site/public/brand/` (logótipo e ícone, versões clara/escura); favicons e `og.png` derivados; ícones de 64 px em `src/localalibiscan/assets/` (embutidos no relatório HTML).
-- Página de exemplo: `site/public/example/index.html`. Capturas SVG em `docs/img/`.
+- Página de exemplo: `site/public/example/index.html`. Capturas SVG em `docs/img/`. Capturas da interface (`ui-dashboard.jpg`, `ui-evidence.jpg`, em `site/public/img/` e `docs/img/`) tiram-se à mão com `HOME=<tmp> las ui <tmp>/projects` (fixtures do painel), para os caminhos aparecerem como `~/projects`.
 - Vídeo e GIF de demonstração: `scripts/demo-video.sh` (VHS em Docker + Ollama local), guião em `docs/video/PLANO.md`. Se mudar um texto que uma cena mostra, refazer o vídeo.
 - Publicação no PyPI: `.github/workflows/publish.yml` (trusted publishing ao publicar uma release). Licença: MIT.
