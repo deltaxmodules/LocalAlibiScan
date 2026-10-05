@@ -5,6 +5,15 @@
 
 Este documento serve de guia para construir o LocalAlibiScan com o Claude Code, **uma fase de cada vez**. Cada fase tem um objetivo, o que deve ser entregue, os critérios de verificação e o que fica fora dela. Só se avança para a fase seguinte quando todos os critérios da anterior estiverem cumpridos.
 
+### Estado (2026-10-05)
+
+| Fase | Estado | Etiqueta |
+|---|---|---|
+| 0 a 8 | Feitas | `fase-0` … `fase-8` |
+| 9 — Interface em inglês | Por fazer | — |
+
+Publicado: PyPI `localalibiscan` 0.1.2 (MIT). Feito para além do pedido nas fases: comando `las config`, manual em inglês (`site/`, VitePress, no GitHub Pages) com a referência gerada a partir do código, vídeo e GIF de demonstração (`scripts/demo-video.sh`), marca (logótipo e ícones) e CI em Linux/macOS/Windows.
+
 ---
 
 ## 1. Proposta de valor (o que nos distingue)
@@ -133,10 +142,10 @@ A fixture `node_sqlite_lying_readme` serve também para testar o caso "subpasta"
 - Todas as fixtures da secção 6.
 
 **Verificação:**
-- [ ] `pipx install -e .` funciona e `las --help` mostra os comandos.
-- [ ] `las files tests/fixtures/node_sqlite_lying_readme` não lista `node_modules`.
-- [ ] Teste que tenta escrever fora de `.localalibi/` através de `fs.py` falha com exceção.
-- [ ] `pytest` passa.
+- [x] `pipx install -e .` funciona e `las --help` mostra os comandos.
+- [x] `las files tests/fixtures/node_sqlite_lying_readme` não lista `node_modules`.
+- [x] Teste que tenta escrever fora de `.localalibi/` através de `fs.py` falha com exceção.
+- [x] `pytest` passa.
 
 **Fora desta fase:** qualquer deteção, SQLite, tree-sitter.
 
@@ -175,14 +184,14 @@ A fixture `node_sqlite_lying_readme` serve também para testar o caso "subpasta"
 - Comando `las scan <pasta>`: corre os detetores e mostra o perfil no terminal, com símbolo de estado e evidência por baixo de cada linha.
 
 **Verificação:**
-- [ ] `las check tests/fixtures/not_a_project` → `✗ não é um projeto de software`, com evidências, e `las scan` na mesma pasta para sem analisar.
-- [ ] `las check tests/fixtures/projects_root` → `root`, com os 4 projetos listados e sugestão de `las dashboard`.
-- [ ] `las check tests/fixtures/node_sqlite_lying_readme/src` → `subfolder`, apontando para `node_sqlite_lying_readme`.
-- [ ] `las check tests/fixtures/loose_scripts` → `≈ provável projeto`, e `las scan` analisa com aviso.
-- [ ] `las scan` em `python_fastapi_openai` mostra Python, dependências com número de linha e ponto de entrada.
-- [ ] `empty_project` mostra estados `?` em vez de inventar valores.
-- [ ] Cada `Claim` em `project.json` tem estado; os que não são `unknown` têm pelo menos uma evidência.
-- [ ] Testes por detetor contra as fixtures.
+- [x] `las check tests/fixtures/not_a_project` → `✗ não é um projeto de software`, com evidências, e `las scan` na mesma pasta para sem analisar.
+- [x] `las check tests/fixtures/projects_root` → `root`, com os 4 projetos listados e sugestão de `las dashboard`.
+- [x] `las check tests/fixtures/node_sqlite_lying_readme/src` → `subfolder`, apontando para `node_sqlite_lying_readme`.
+- [x] `las check tests/fixtures/loose_scripts` → `≈ provável projeto`, e `las scan` analisa com aviso.
+- [x] `las scan` em `python_fastapi_openai` mostra Python, dependências com número de linha e ponto de entrada.
+- [x] `empty_project` mostra estados `?` em vez de inventar valores.
+- [x] Cada `Claim` em `project.json` tem estado; os que não são `unknown` têm pelo menos uma evidência.
+- [x] Testes por detetor contra as fixtures.
 
 **Fora desta fase:** leitura de código-fonte com tree-sitter, BD SQLite, LLM.
 
@@ -206,11 +215,11 @@ A fixture `node_sqlite_lying_readme` serve também para testar o caso "subpasta"
 - Opção `las scan --evidence` para mostrar todas as evidências; sem ela, mostra só a primeira de cada `Claim`.
 
 **Verificação:**
-- [ ] `node_sqlite_lying_readme` → BD SQLite `✓` com evidência no `package.json` **e** em `src/db/database.ts`.
-- [ ] `python_dep_unused` → Redis `≈` (declarado, não usado).
-- [ ] `python_fastapi_openai` → OpenAI `✓` e rotas listadas com linha.
-- [ ] Análise de um projeto real médio (~500 ficheiros) em menos de 30 segundos.
-- [ ] Nenhum ficheiro fora de `.localalibi/` foi alterado (verificar com hash antes/depois nos testes).
+- [x] `node_sqlite_lying_readme` → BD SQLite `✓` com evidência no `package.json` **e** em `src/db/database.ts`.
+- [x] `python_dep_unused` → Redis `≈` (declarado, não usado).
+- [x] `python_fastapi_openai` → OpenAI `✓` e rotas listadas com linha.
+- [x] Análise de um projeto real médio (~500 ficheiros) em menos de 30 segundos.
+- [x] Nenhum ficheiro fora de `.localalibi/` foi alterado (verificar com hash antes/depois nos testes).
 
 **Fora desta fase:** README vs código, histórico, LLM.
 
@@ -229,10 +238,10 @@ A fixture `node_sqlite_lying_readme` serve também para testar o caso "subpasta"
 - Ordenação por última alteração; filtro por linguagem.
 
 **Verificação:**
-- [ ] `las dashboard tests/fixtures/projects_root` encontra os 4 projetos, incluindo o que não tem git.
-- [ ] Segunda execução sem alterações é pelo menos 5× mais rápida (cache).
-- [ ] O HTML abre no browser sem internet.
-- [ ] Teste manual na pasta real de projetos do utilizador.
+- [x] `las dashboard tests/fixtures/projects_root` encontra os 4 projetos, incluindo o que não tem git.
+- [x] Segunda execução sem alterações é pelo menos 5× mais rápida (cache).
+- [x] O HTML abre no browser sem internet.
+- [ ] Teste manual na pasta real de projetos do utilizador. *(Sem registo de que foi feito: confirmar à mão.)*
 
 **Fora desta fase:** contradições, histórico, LLM.
 
@@ -252,9 +261,9 @@ A fixture `node_sqlite_lying_readme` serve também para testar o caso "subpasta"
 - **Nunca** editar a documentação.
 
 **Verificação:**
-- [ ] `node_sqlite_lying_readme` → `⚠` com `README.md:linha` ("PostgreSQL") e `src/db/database.ts:linha` (SQLite).
-- [ ] `python_fastapi_openai` sem falsos positivos.
-- [ ] Testes com frases ambíguas ("migrámos de PostgreSQL para SQLite") documentados como limitação conhecida se não forem resolvidos.
+- [x] `node_sqlite_lying_readme` → `⚠` com `README.md:linha` ("PostgreSQL") e `src/db/database.ts:linha` (SQLite).
+- [x] `python_fastapi_openai` sem falsos positivos.
+- [x] Testes com frases ambíguas ("migrámos de PostgreSQL para SQLite") documentados como limitação conhecida se não forem resolvidos.
 
 **Fora desta fase:** interpretação com LLM das frases do README (fica para a Fase 6, opcional).
 
@@ -275,9 +284,9 @@ A fixture `node_sqlite_lying_readme` serve também para testar o caso "subpasta"
 - Coluna "Mudou desde a última vez" no painel.
 
 **Verificação:**
-- [ ] Teste que copia uma fixture para pasta temporária, faz scan, acrescenta `services/openai.ts` e uma rota, faz refresh → aparece `+ Serviço OpenAI` e `+ Nova rota` com ficheiro.
-- [ ] Remover um ficheiro importante aparece como `-`.
-- [ ] Funciona em projetos sem git (só por hash de ficheiros).
+- [x] Teste que copia uma fixture para pasta temporária, faz scan, acrescenta `services/openai.ts` e uma rota, faz refresh → aparece `+ Serviço OpenAI` e `+ Nova rota` com ficheiro.
+- [x] Remover um ficheiro importante aparece como `-`.
+- [x] Funciona em projetos sem git (só por hash de ficheiros).
 
 **Fora desta fase:** LLM.
 
@@ -296,9 +305,9 @@ A fixture `node_sqlite_lying_readme` serve também para testar o caso "subpasta"
 - A pergunta "O que faz este projeto?" pode usar o README como contexto adicional, marcado como fonte.
 
 **Verificação:**
-- [ ] Sem Ollama a correr, `las explain` funciona e mostra só factos.
-- [ ] Com Ollama, todas as frases do `overview.md` têm citações válidas (teste do validador com respostas falsas da LLM contendo ids inventados).
-- [ ] `empty_project` produz sobretudo `?`, não texto inventado.
+- [x] Sem Ollama a correr, `las explain` funciona e mostra só factos.
+- [x] Com Ollama, todas as frases do `overview.md` têm citações válidas (teste do validador com respostas falsas da LLM contendo ids inventados).
+- [x] `empty_project` produz sobretudo `?`, não texto inventado.
 
 **Fora desta fase:** perguntas livres.
 
@@ -315,8 +324,8 @@ A fixture `node_sqlite_lying_readme` serve também para testar o caso "subpasta"
 - Sem Ollama → mostrar só a lista de evidências encontradas.
 
 **Verificação:**
-- [ ] "Onde usamos OpenAI?" em `python_fastapi_openai` cita `services/ai.py` com linha.
-- [ ] Pergunta sobre algo inexistente ("Onde está o pagamento Stripe?") não inventa resposta.
+- [x] "Onde usamos OpenAI?" em `python_fastapi_openai` cita `services/ai.py` com linha.
+- [x] Pergunta sobre algo inexistente ("Onde está o pagamento Stripe?") não inventa resposta.
 
 **Fora desta fase:** embeddings/RAG vetorial (só se a procura determinista se mostrar insuficiente).
 
@@ -329,11 +338,41 @@ A fixture `node_sqlite_lying_readme` serve também para testar o caso "subpasta"
 **Entregar:**
 - README em inglês com a proposta de valor, GIF/captura do painel e do `⚠`.
 - Página de exemplo com o painel HTML de projetos open source conhecidos.
-- Publicação no PyPI (`localalibiscan`), licença a decidir.
+- Publicação no PyPI (`localalibiscan`), licença MIT.
 - Ficheiro de configuração `~/.localalibi/config.toml` (pastas a ignorar, modelo Ollama, limite de tamanho).
 
 **Verificação:**
-- [ ] `pipx install localalibiscan` numa máquina limpa (Mac, Linux, Windows) e `las dashboard` funciona.
+- [x] `pipx install localalibiscan` numa máquina limpa (Mac, Linux, Windows) e `las dashboard` funciona. *(Verificado no CI: `.github/workflows/ci.yml` instala o wheel com pipx em Linux, macOS e Windows e corre `las dashboard`.)*
+
+---
+
+## FASE 9 — Interface em inglês (internacionalização)
+
+**Objetivo:** o README e o manual estão em inglês, mas a ferramenta fala português. Pôr a ferramenta a falar inglês por omissão, mantendo o português, sem mudar nenhum facto nem quebrar dados já guardados.
+
+**Entregar:**
+- Catálogos de mensagens em `src/localalibiscan/locales/` (`en` e `pt`), um ficheiro por língua, com chaves estáveis (ex. `verdict.not_a_project`). Sem dependências novas: um módulo `i18n.py` com `t(key, **params)`.
+- Escolha da língua, por esta ordem: opção `--lang-ui` (ou nome equivalente que não colida com o `--lang` do painel), variável `LOCALALIBI_LANG`, `language` em `~/.localalibi/config.toml`, e por omissão `en`. Uma chave que falte numa língua cai para `en` e nunca rebenta.
+- **Os factos não dependem da língua.** O `Claim` ganha campos opcionais `label_key`, `note_key` e `params` (alteração compatível; a secção 4 não muda de forma incompatível). Os detetores passam a preencher as chaves; `label` e `note` continuam a ser gravados (na língua por omissão) para compatibilidade.
+- A tradução faz-se **só na apresentação** (terminal, HTML, `overview.md`). `project.json`, `evidence.db` e `history.db` antigos, sem chaves, continuam a mostrar-se com o texto gravado.
+- A língua **não** entra na impressão digital da cache: mudar de língua não obriga a reanalisar.
+- Traduzir: ajuda da CLI (Typer), vereditos, perfil do `scan`, painel e relatório HTML, `refresh`/`history` (os textos "+/-/~/⚠"), perguntas fixas do `explain`, mensagens do `ask` ("Não encontrei evidências…") e avisos (Ollama desligado, `--force`, etc.).
+- LLM: o prompt pede a resposta na língua escolhida; o validador não muda (continua a trabalhar com ids e `ficheiro:linha`, que não dependem da língua).
+- Documentação vs código e `ask`: a deteção de tecnologias na documentação já é por nomes próprios; confirmar que funciona em README em inglês e em português. Os sinónimos do `ask` (`SYNONYM_GROUPS`) já são bilingues; acrescentar os termos em falta.
+- Manual: retirar o aviso "the output is in Portuguese" do README e do `site/`, refazer capturas (`docs/img/`), página de exemplo e vídeo/GIF em inglês. `scripts/gen_reference.py` gera a referência em inglês.
+- Teste que percorre todas as chaves usadas no código (procura de `t("…")`) e falha se alguma faltar em `en`; aviso (não falha) se faltar em `pt`.
+- Subir `__version__` (os detetores mudam).
+
+**Verificação:**
+- [ ] `las scan tests/fixtures/python_fastapi_openai` sem configuração mostra o perfil em inglês; com `LOCALALIBI_LANG=pt` mostra-o em português, com os mesmos estados, valores e evidências.
+- [ ] `las check tests/fixtures/not_a_project` em inglês → `✗ not a software project`, com as mesmas evidências.
+- [ ] `project.json` de duas análises (uma em cada língua) tem os mesmos `id`, `status`, `value` e evidências.
+- [ ] Um `project.json`/`history.db` criado pela versão 0.1.x (sem chaves) é lido e mostrado sem erros.
+- [ ] Mudar de língua e voltar a correr `las dashboard` usa a cache (sem reanalisar).
+- [ ] `las ask` "Where do we use OpenAI?" e "Onde usamos OpenAI?" citam o mesmo `services/ai.py:linha`.
+- [ ] Teste de chaves em falta passa; `pytest` passa; README e manual sem aviso de português.
+
+**Fora desta fase:** outras línguas além de `en` e `pt` (o mecanismo tem de as permitir, mas não se traduzem agora); tradução de texto da documentação do projeto analisado.
 
 ---
 
