@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 from urllib.parse import urlparse
 
+from .i18n import t
+
 LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
 
@@ -38,7 +40,7 @@ class OllamaClient:
     def __post_init__(self) -> None:
         host = urlparse(self.url).hostname
         if host not in LOCAL_HOSTS:
-            raise NotLocal(f"O Ollama tem de estar em localhost (recebido: {self.url})")
+            raise NotLocal(t("llm.not_local", url=self.url))
 
     @property
     def name(self) -> str:

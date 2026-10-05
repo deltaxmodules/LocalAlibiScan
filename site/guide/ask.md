@@ -14,11 +14,11 @@ Evidence comes first, the model second:
 4. **The validator** removes every sentence that doesn't cite a line inside the excerpts.
 
 ```text
-≈ Resposta redigida pela IA a partir das evidências (modelo qwen2.5-coder:7b)
+≈ Answer drafted by AI from the evidence (model qwen2.5-coder:7b)
   ≈ Authentication is done in the login routes. [backend/app/api/routes/login.py:23]
   ≈ The verification of passwords is handled in the security module. [backend/app/core/security.py:30]
 ```
 
-**If nothing is found, the answer is "Não encontrei evidências sobre isto"** — with terms that do exist in the project as suggestions — and the model is never called. Asking about Stripe in a project without Stripe cannot produce an invented answer.
+**If nothing is found, the answer is "No evidence found about this"** — with terms that do exist in the project as suggestions — and the model is never called. Asking about Stripe in a project without Stripe cannot produce an invented answer.
 
 Without Ollama you get the list of evidence.

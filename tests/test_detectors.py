@@ -107,7 +107,7 @@ def test_broken_manifest_is_unknown_not_crash(tmp_path: Path, config) -> None:
     claims = claims_for(tmp_path / "p", config)
     broken = claims["manifest.error.package.json"]
     assert broken.status == "unknown"
-    assert "não foi possível ler" in broken.note
+    assert "could not be read" in broken.note
 
 
 def test_composer(tmp_path: Path, config) -> None:
@@ -132,7 +132,7 @@ def test_project_types(fixture_copy, config) -> None:
     assert claims_for(fixture_copy("node_sqlite_lying_readme"), config)["project.type"].value == "Node.js/TypeScript"
     assert claims_for(fixture_copy("python_fastapi_openai"), config)["project.type"].value == "Python"
     loose = claims_for(fixture_copy("loose_scripts"), config)["project.type"]
-    assert (loose.value, loose.status) == ("Scripts Python", "inferred")
+    assert (loose.value, loose.status) == ("Python scripts", "inferred")
     assert claims_for(fixture_copy("empty_project"), config)["project.type"].status == "unknown"
 
 

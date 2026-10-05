@@ -17,13 +17,13 @@ las check ~/Downloads
 Known manifests: `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `composer.json`, plus `setup.py`, `Pipfile`, `Gemfile`, `pom.xml`, `build.gradle`, `Package.swift`, `pubspec.yaml`, `mix.exs`, `deno.json`.
 
 ```text
-✗ não é um projeto de software  ~/holiday-photos
-  └ .  0 manifestos conhecidos
-  └ .  sem pasta .git
-  └ .  0 de 6 ficheiros (0%) são código ou notebooks
+✗ not a software project  ~/holiday-photos
+  └ .  0 known manifests
+  └ .  no .git folder
+  └ .  0 of 6 files (0%) are code or notebooks
 ```
 
-`las scan` refuses the last three verdicts (exit code 2); add `--force` to analyse anyway — the profile then says *"análise forçada"* at the top.
+`las scan` refuses the last three verdicts (exit code 2); add `--force` to analyse anyway — the profile then says *"Forced analysis"* at the top.
 
 A folder of loose scripts (no git, no manifest) is a **probable project**: it is analysed, its type is *"≈ Scripts Python"*, and the dashboard marks it with ≈.
 

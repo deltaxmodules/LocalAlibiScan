@@ -15,7 +15,8 @@ from rich.markup import escape
 from rich.table import Table
 
 from . import __version__
-from .config import CONFIG_TEMPLATE, FIXED_EXCLUDED_DIRS, config_path, load_config
+from . import i18n
+from .config import FIXED_EXCLUDED_DIRS, ConfigError, config_path, config_template, load_config
 from .detectors.project_kind import classify
 from .fs import ProjectFS
 from .dashboard import build_dashboard
@@ -24,7 +25,8 @@ from .ask import ask as ask_project
 from .drafting import Overview, generate_overview, overview_markdown
 from .drafting import explain as explain_project
 from .history import diff_snapshots, list_snapshots
-from .llm import OllamaClient
+from .i18n import t, tn
+from .llm import NotLocal, OllamaClient
 from .project import Project
 from .render import (
     section_keys,
@@ -37,19 +39,29 @@ from .render import (
 )
 from .scan import scan as run_scan
 
+def _argv_language(argv: list[str]) -> str | None:
+    """`--lang-ui X` na linha de comandos, lido antes de o Typer a analisar.
+
+    A ajuda (`--help`) é montada quando o módulo é importado, por isso a língua
+    tem de ser conhecida já aqui.
+    """
+    for i, arg in enumerate(argv):
+        if arg == "--lang-ui" and i + 1 < len(argv):
+            return argv[i + 1]
+        if arg.startswith("--lang-ui="):
+            return arg.split("=", 1)[1]
+    return None
+
+
+if _argv_language(sys.argv[1:]):
+    i18n.set_language(_argv_language(sys.argv[1:]))
+
 app = typer.Typer(
-    help="LocalAlibiScan — every claim has an alibi.",
+    help=t("cli.app.help"),
     no_args_is_help=True,
     add_completion=False,
 )
 console = Console(soft_wrap=True)
-
-SKIP_LABELS = {
-    "too_large": "grande, não lido",
-    "binary": "binário, não lido",
-    "symlink": "ligação, não lido",
-    "unreadable": "ilegível",
-}
 
 
 def _version(value: bool) -> None:
@@ -58,36 +70,47 @@ def _version(value: bool) -> None:
         raise typer.Exit()
 
 
-@app.callback()
+def _lang_ui(value: str | None) -> str | None:
+    lang = i18n.normalize(value)
+    if lang and lang not in i18n.LANGUAGES:
+        raise typer.BadParameter(t("cli.lang_ui.bad", code=value, langs=", ".join(i18n.LANGUAGES)))
+    i18n.set_language(lang)  # None: volta à escolha automática (ambiente, configuração)
+    return value
+
+
+@app.callback(help=t("cli.app.help"))
 def root(
     version: Annotated[
-        bool, typer.Option("--version", callback=_version, is_eager=True, help="Mostra a versão.")
+        bool, typer.Option("--version", callback=_version, is_eager=True, help=t("cli.opt.version"))
     ] = False,
+    lang_ui: Annotated[
+        str | None,
+        typer.Option("--lang-ui", callback=_lang_ui, is_eager=True, metavar="LANG", help=t("cli.opt.lang_ui")),
+    ] = None,
 ) -> None:
-    """Diz o que cada projeto é, como está e o que mudou — com prova."""
+    pass
 
 
-@app.command()
+@app.command(help=t("cli.files.help"))
 def files(
     folder: Annotated[
-        Path, typer.Argument(exists=True, file_okay=False, help="Pasta a percorrer.")
+        Path, typer.Argument(exists=True, file_okay=False, help=t("cli.arg.walk_folder"))
     ] = Path("."),
     max_size: Annotated[
         int | None,
-        typer.Option("--max-size", help="Tamanho máximo em bytes para ler um ficheiro."),
+        typer.Option("--max-size", help=t("cli.opt.max_size")),
     ] = None,
 ) -> None:
-    """Lista os ficheiros que seriam analisados, com extensão e tamanho."""
     config = load_config()
     if max_size is not None:
         config = replace(config, max_file_size=max_size)
     pfs = ProjectFS(folder, config)
 
     table = Table(title=str(pfs.root), title_justify="left")
-    table.add_column("Ficheiro", overflow="fold")
-    table.add_column("Ext.")
-    table.add_column("Tamanho", justify="right")
-    table.add_column("Nota", style="yellow")
+    table.add_column(t("files.col.file"), overflow="fold")
+    table.add_column(t("files.col.ext"))
+    table.add_column(t("files.col.size"), justify="right")
+    table.add_column(t("files.col.note"), style="yellow")
 
     total = skipped = total_bytes = 0
     for entry in pfs.walk():
@@ -99,69 +122,73 @@ def files(
             entry.path,
             entry.extension or "—",
             _human_size(entry.size),
-            SKIP_LABELS.get(entry.skipped or "", ""),
+            t(f"files.skip.{entry.skipped}") if entry.skipped else "",
         )
 
     console.print(table)
     console.print(
-        f"{total} ficheiros, {_human_size(total_bytes)}"
-        + (f", {skipped} registados mas não lidos" if skipped else "")
+        tn("files.total", total, size=_human_size(total_bytes))
+        + (t("files.skipped", n=skipped) if skipped else "")
     )
 
 
 FolderArg = Annotated[
-    Path, typer.Argument(exists=True, file_okay=False, help="Pasta a analisar.")
+    Path, typer.Argument(exists=True, file_okay=False, help=t("cli.arg.folder"))
 ]
 
 
-@app.command()
+ForceOpt = Annotated[bool, typer.Option("--force", help=t("cli.opt.force"))]
+NoLlmOpt = Annotated[bool, typer.Option("--no-llm", help=t("cli.opt.no_llm"))]
+ModelOpt = Annotated[str | None, typer.Option("--model", help=t("cli.opt.model"))]
+
+
+def _not_analysed(kind, key: str = "cli.not_analysed") -> None:
+    render_kind(console, kind)
+    console.print(f"\n[dim]{escape(t(key))}[/]")
+    raise typer.Exit(code=2)
+
+
+@app.command(help=t("cli.check.help"))
 def check(folder: FolderArg = Path(".")) -> None:
-    """Mostra só o veredito da pasta e as suas evidências, sem análise."""
     render_kind(console, classify(folder, load_config()))
 
 
-@app.command()
+@app.command(help=t("cli.scan.help"))
 def scan(
     folder: FolderArg = Path("."),
-    force: Annotated[
-        bool, typer.Option("--force", help="Analisa mesmo que a pasta não pareça um projeto.")
-    ] = False,
+    force: ForceOpt = False,
     evidence: Annotated[
-        bool, typer.Option("--evidence", help="Mostra todas as evidências de cada afirmação.")
+        bool, typer.Option("--evidence", help=t("cli.opt.evidence"))
     ] = False,
     only: Annotated[
         str | None,
-        typer.Option("--only", help="Só estas secções, ex.: database,framework,route,docs_vs_code."),
+        typer.Option("--only", help=t("cli.opt.only")),
     ] = None,
 ) -> None:
-    """Analisa a pasta e mostra o perfil, com estado e evidência por afirmação."""
     result = run_scan(folder, load_config(), force=force)
     if result.profile is None:
-        render_kind(console, result.kind)
-        console.print("\n[dim]Análise não feita. Use --force para analisar mesmo assim.[/]")
-        raise typer.Exit(code=2)
+        _not_analysed(result.kind)
     render_profile(console, result.profile, all_evidence=evidence, only=section_keys(only))
     if result.output:
-        console.print(f"[dim]Perfil guardado em {result.output}[/]", highlight=False)
+        console.print(f"[dim]{escape(t('cli.scan.saved', path=result.output))}[/]", highlight=False)
 
 
-@app.command()
+@app.command(help=t("cli.dashboard.help"))
 def dashboard(
     folder: FolderArg = Path("."),
     html: Annotated[
-        bool, typer.Option("--html", help="Gera ~/.localalibi/dashboard.html (autónomo, sem rede).")
+        bool, typer.Option("--html", help=t("cli.opt.html"))
     ] = False,
     lang: Annotated[
-        str | None, typer.Option("--lang", help="Mostra só projetos com esta linguagem.")
+        str | None, typer.Option("--lang", help=t("cli.opt.lang"))
     ] = None,
     depth: Annotated[
-        int | None, typer.Option("--depth", help="Níveis a descer à procura de projetos.")
+        int | None, typer.Option("--depth", help=t("cli.opt.depth"))
     ] = None,
     no_cache: Annotated[
-        bool, typer.Option("--no-cache", help="Reanalisa todos os projetos.")
+        bool, typer.Option("--no-cache", help=t("cli.opt.no_cache"))
     ] = False,
 ) -> None:
-    """Painel com todos os projetos de uma pasta raiz."""
     config = load_config()
     kind = classify(folder, config)
     if kind.analyzable:
@@ -170,70 +197,59 @@ def dashboard(
         assert result.profile is not None
         render_profile(console, result.profile)
         console.print(
-            f"\n[dim]Esta pasta é um projeto, não uma raiz. Para o perfil completo: "
-            f"[bold]las scan {shlex.quote(str(kind.path))}[/][/]",
+            f"\n[dim]{t('cli.dashboard.is_project')} "
+            f"[bold]las scan {escape(shlex.quote(str(kind.path)))}[/][/]",
             highlight=False,
         )
         return
 
-    with console.status("A procurar projetos…") as status:
+    with console.status(t("cli.dashboard.searching")) as status:
         board = build_dashboard(
             folder,
             config,
             depth=depth,
             language=lang,
             use_cache=not no_cache,
-            on_project=lambda p: status.update(f"A analisar {p.name}…"),
+            on_project=lambda p: status.update(escape(t("cli.dashboard.analysing", name=p.name))),
         )
     if not board.rows:
-        render_kind(console, kind)
-        console.print("\n[dim]Nenhum projeto encontrado nesta pasta.[/]")
-        raise typer.Exit(code=2)
+        _not_analysed(kind, "cli.dashboard.none")
 
     render_dashboard(console, board)
     if html:
         out = ProjectFS(board.root, config).write_text(
             config.user_config_dir / "dashboard.html", render_html(board)
         )
-        console.print(f"Relatório HTML: [bold]{out}[/]", highlight=False)
+        console.print(f"{t('cli.dashboard.html')} [bold]{escape(str(out))}[/]", highlight=False)
 
 
-@app.command()
-def refresh(
-    folder: FolderArg = Path("."),
-    force: Annotated[
-        bool, typer.Option("--force", help="Analisa mesmo que a pasta não pareça um projeto.")
-    ] = False,
-) -> None:
-    """Nova análise e o que mudou desde a anterior, em linguagem de arquitetura."""
+@app.command(help=t("cli.refresh.help"))
+def refresh(folder: FolderArg = Path("."), force: ForceOpt = False) -> None:
     result = run_scan(folder, load_config(), force=force)
     if result.profile is None:
-        render_kind(console, result.kind)
-        console.print("\n[dim]Análise não feita. Use --force para analisar mesmo assim.[/]")
-        raise typer.Exit(code=2)
-    console.print(f"[bold]{result.profile.root}[/]", highlight=False)
+        _not_analysed(result.kind)
+    console.print(f"[bold]{escape(result.profile.root)}[/]", highlight=False)
     if result.first_scan or result.diff is None:
-        console.print("[dim]Primeira análise: o próximo refresh vai comparar com esta.[/]")
+        console.print(f"[dim]{t('cli.refresh.first')}[/]")
         return
     render_diff(console, result.diff)
 
 
-@app.command()
+@app.command(help=t("cli.history.help"))
 def history(folder: FolderArg = Path(".")) -> None:
-    """Lista as análises anteriores, com um resumo de uma linha."""
     snaps = list_snapshots(folder)
     if not snaps:
-        console.print("[dim]Sem histórico. Corra «las scan» ou «las refresh» primeiro.[/]")
+        console.print(f"[dim]{t('cli.history.none')}[/]")
         raise typer.Exit(code=2)
     table = Table(title=str(Path(folder).resolve()), title_justify="left")
     table.add_column("#", justify="right")
-    table.add_column("Data")
+    table.add_column(t("history.col.date"))
     table.add_column("HEAD")
-    table.add_column("Ficheiros", justify="right")
-    table.add_column("Mudanças")
+    table.add_column(t("history.col.files"), justify="right")
+    table.add_column(t("history.col.changes"))
     prev = None
     for snap in snaps:
-        summary = "primeira análise" if prev is None else diff_snapshots(prev, snap).summary()
+        summary = t("history.first") if prev is None else diff_snapshots(prev, snap).summary()
         table.add_row(
             str(snap.id),
             snap.scanned_at.astimezone().strftime("%Y-%m-%d %H:%M"),
@@ -245,23 +261,12 @@ def history(folder: FolderArg = Path(".")) -> None:
     console.print(table)
 
 
-@app.command()
-def explain(
-    folder: FolderArg = Path("."),
-    no_llm: Annotated[
-        bool, typer.Option("--no-llm", help="Não usa o Ollama: mostra só factos.")
-    ] = False,
-    model: Annotated[
-        str | None, typer.Option("--model", help="Modelo do Ollama (por omissão o da configuração).")
-    ] = None,
-) -> None:
-    """Explique-me este projeto: perguntas fixas respondidas com factos (e IA opcional)."""
+@app.command(help=t("cli.explain.help"))
+def explain(folder: FolderArg = Path("."), no_llm: NoLlmOpt = False, model: ModelOpt = None) -> None:
     config = load_config()
     result = run_scan(folder, config, use_cache=True)
     if result.profile is None:
-        render_kind(console, result.kind)
-        console.print("\n[dim]Não é um projeto: nada para explicar. Use «las scan --force» primeiro.[/]")
-        raise typer.Exit(code=2)
+        _not_analysed(result.kind, "cli.explain.not_project")
 
     client, llm_off_reason = _llm_client(config, no_llm, model)
 
@@ -273,7 +278,7 @@ def explain(
         except OSError:
             return None
 
-    with console.status("A redigir com o modelo local…" if client else "A preparar…"):
+    with console.status(t("cli.explain.drafting") if client else t("cli.explain.preparing")):
         exp = explain_project(result.profile, client, root=pfs.root, read=read)
         overview = generate_overview(result.profile, client) if client else Overview(None, None, llm_off_reason)
     if llm_off_reason and not exp.llm_error:
@@ -284,34 +289,27 @@ def explain(
         pfs.output_dir / "overview.md",
         overview_markdown(exp, overview, datetime.now().strftime("%Y-%m-%d %H:%M")),
     )
-    console.print(f"\n[dim]Resumo guardado em {out}[/]", highlight=False)
+    console.print(f"\n[dim]{escape(t('cli.explain.saved', path=out))}[/]", highlight=False)
 
 
-@app.command()
+@app.command(help=t("cli.ask.help"))
 def ask(
-    folder: Annotated[Path, typer.Argument(exists=True, file_okay=False, help="Pasta do projeto.")],
-    question: Annotated[str, typer.Argument(help="Pergunta, ex.: \"Onde é feita a autenticação?\"")],
-    no_llm: Annotated[
-        bool, typer.Option("--no-llm", help="Não usa o Ollama: mostra só as evidências.")
-    ] = False,
-    model: Annotated[
-        str | None, typer.Option("--model", help="Modelo do Ollama (por omissão o da configuração).")
-    ] = None,
+    folder: Annotated[Path, typer.Argument(exists=True, file_okay=False, help=t("cli.arg.project_folder"))],
+    question: Annotated[str, typer.Argument(help=t("cli.arg.question"))],
+    no_llm: NoLlmOpt = False,
+    model: ModelOpt = None,
     brief: Annotated[
-        bool, typer.Option("--brief", help="Evidências numa linha cada, sem os excertos de código.")
+        bool, typer.Option("--brief", help=t("cli.opt.brief"))
     ] = False,
 ) -> None:
-    """Pergunta livre: procura evidências primeiro; a IA (opcional) só responde com elas."""
     config = load_config()
     result = run_scan(folder, config, use_cache=True)
     if result.profile is None:
-        render_kind(console, result.kind)
-        console.print("\n[dim]Não é um projeto. Use «las scan --force» primeiro.[/]")
-        raise typer.Exit(code=2)
+        _not_analysed(result.kind, "cli.ask.not_project")
 
     client, note = _llm_client(config, no_llm, model)
     project = Project(result.kind.path, config)
-    with console.status("A procurar evidências…" + (" e a redigir…" if client else "")):
+    with console.status(t("cli.ask.searching_drafting") if client else t("cli.ask.searching")):
         answer = ask_project(project, result.profile, question, client)
     render_ask(console, answer, note, brief=brief)
     if not answer.found:
@@ -320,36 +318,37 @@ def ask(
 
 def _llm_client(config, no_llm: bool, model: str | None) -> tuple[OllamaClient | None, str | None]:
     if no_llm:
-        return None, "desligada com --no-llm"
+        return None, t("llm.off_flag")
     client = OllamaClient(config.ollama_url, model or config.ollama_model, config.ollama_timeout)
     if not client.available():
-        return None, f"Ollama ou modelo {client.model} não disponível em {config.ollama_url}"
+        return None, t("llm.unavailable", model=client.model, url=config.ollama_url)
     return client, None
 
 
-@app.command()
+@app.command(help=t("cli.config.help"))
 def config(
     init: Annotated[
-        bool, typer.Option("--init", help="Cria ~/.localalibi/config.toml com os valores por omissão.")
+        bool, typer.Option("--init", help=t("cli.opt.init"))
     ] = False,
 ) -> None:
-    """Mostra a configuração em uso (e onde está o ficheiro)."""
     path = config_path()
     if init:
         if path.exists():
-            console.print(f"Já existe: {path}", highlight=False)
+            console.print(t("cli.config.exists", path=path), highlight=False)
             raise typer.Exit(code=1)
         cfg = load_config()
-        written = ProjectFS(Path.home(), cfg).write_text(path, CONFIG_TEMPLATE)
-        console.print(f"Criado: {written}", highlight=False)
+        written = ProjectFS(Path.home(), cfg).write_text(path, config_template())
+        console.print(t("cli.config.created", path=written), highlight=False)
         return
     cfg = load_config()
-    console.print(f"Ficheiro: {path} {'(existe)' if path.exists() else '(não existe — use --init)'}", highlight=False)
+    state = t("cli.config.file.exists") if path.exists() else t("cli.config.file.missing")
+    console.print(t("cli.config.file", path=path, state=state), highlight=False)
     extra = sorted(cfg.excluded_dirs - FIXED_EXCLUDED_DIRS)
     rows = [
-        ("Pastas ignoradas (extra)", ", ".join(extra) or "—"),
-        ("Tamanho máximo lido", _human_size(cfg.max_file_size)),
-        ("Profundidade do painel", str(cfg.root_max_depth)),
+        (t("cli.config.ui_language"), i18n.current()),
+        (t("cli.config.ignored"), ", ".join(extra) or "—"),
+        (t("cli.config.max_size"), _human_size(cfg.max_file_size)),
+        (t("cli.config.depth"), str(cfg.root_max_depth)),
         ("Ollama", f"{cfg.ollama_url} · {cfg.ollama_model}"),
     ]
     for label, value in rows:
@@ -370,7 +369,14 @@ def main() -> None:
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure") and (stream.encoding or "").lower().replace("-", "") != "utf8":
             stream.reconfigure(encoding="utf-8", errors="replace")
-    app()
+    try:
+        app()
+    except ConfigError as exc:
+        Console(stderr=True).print(f"[red]{escape(t('cli.config.invalid', error=exc))}[/]", highlight=False)
+        raise SystemExit(2) from exc
+    except NotLocal as exc:
+        Console(stderr=True).print(f"[red]{escape(str(exc))}[/]", highlight=False)
+        raise SystemExit(2) from exc
 
 
 if __name__ == "__main__":

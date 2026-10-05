@@ -19,6 +19,7 @@ from pathlib import Path, PurePosixPath
 from pathspec import GitIgnoreSpec
 
 from .config import BINARY_SNIFF_BYTES, OUTPUT_DIR_NAME, Config, load_config
+from .i18n import t
 from .models import FileEntry, SkipReason
 
 
@@ -34,7 +35,7 @@ class ProjectFS:
     def __init__(self, root: str | os.PathLike[str], config: Config | None = None) -> None:
         self.root = Path(root).expanduser().resolve()
         if not self.root.is_dir():
-            raise NotADirectoryError(f"Não é uma pasta: {self.root}")
+            raise NotADirectoryError(t("error.not_a_folder", path=self.root))
         self.config = config or load_config()
         self.output_dir = self.root / OUTPUT_DIR_NAME
 
@@ -59,14 +60,13 @@ class ProjectFS:
             if resolved != allowed and resolved.is_relative_to(allowed):
                 return resolved
         raise ReadOnlyViolation(
-            f"Escrita recusada: {path} está fora de {self.output_dir} "
-            f"e de {self.config.user_config_dir}"
+            t("error.read_only", path=path, output=self.output_dir, user=self.config.user_config_dir)
         )
 
     def ensure_output_dir(self) -> Path:
         """Cria `.localalibi/` com um `.gitignore` que se ignora a si próprio."""
         if self.output_dir.is_symlink():
-            raise ReadOnlyViolation(f"{self.output_dir} é uma ligação simbólica")
+            raise ReadOnlyViolation(t("error.symlink_output", path=self.output_dir))
         self.output_dir.mkdir(exist_ok=True)
         gitignore = self.output_dir / ".gitignore"
         if not gitignore.exists():
@@ -104,7 +104,7 @@ class ProjectFS:
         path = self._abs(rel)
         reason = self.skip_reason(path)
         if reason:
-            raise FileNotReadable(f"{path} não é lido ({reason})")
+            raise FileNotReadable(t("error.not_read", path=path, reason=reason))
         return path.read_bytes()
 
     def read_text(self, rel: str | os.PathLike[str]) -> str:

@@ -7,7 +7,7 @@ from collections import defaultdict
 from ..knowledge import ECOSYSTEM_LANGUAGE, language_of
 from ..models import Claim, Evidence
 from ..project import Project
-from .base import Detector, register
+from .base import Detector, gen_evidence, register
 from .languages import CODE_LANGUAGE_NAMES, language_counts
 from .manifests import Manifest, json_key_line, parse_manifests
 
@@ -66,7 +66,7 @@ class ProjectTypeDetector(Detector):
                     project,
                     id="project.type",
                     category="project",
-                    label="Tipo de projeto",
+                    label_key="claim.project_type",
                     value=f"Monorepo ({stacks})",
                     status="confirmed",
                     evidence=evidence,
@@ -75,7 +75,7 @@ class ProjectTypeDetector(Detector):
                     project,
                     id="project.components",
                     category="project",
-                    label="Componentes",
+                    label_key="claim.components",
                     value=comps,
                     status="confirmed",
                     evidence=evidence[len(workspace_ev):],
@@ -90,7 +90,7 @@ class ProjectTypeDetector(Detector):
                     project,
                     id="project.type",
                     category="project",
-                    label="Tipo de projeto",
+                    label_key="claim.project_type",
                     value=describe_stack(project, directory, manifests),
                     status="confirmed",
                     evidence=[project.evidence(m.path, None, "manifest", m.ecosystem) for m in manifests],
@@ -108,11 +108,12 @@ class ProjectTypeDetector(Detector):
                     project,
                     id="project.type",
                     category="project",
-                    label="Tipo de projeto",
-                    value=f"Scripts {lang}",
+                    label_key="claim.project_type",
+                    value_key="value.scripts",
                     status="inferred",
-                    evidence=[Evidence(file=f, kind="file", snippet="ficheiro de código") for f in files[:3]],
-                    note="Sem manifesto: deduzido pelas extensões dos ficheiros",
+                    evidence=[gen_evidence(f, "file", "ev.code_file") for f in files[:3]],
+                    note_key="note.project_type.scripts",
+                    params={"language": lang},
                 )
             ]
         return [
@@ -120,10 +121,9 @@ class ProjectTypeDetector(Detector):
                 project,
                 id="project.type",
                 category="project",
-                label="Tipo de projeto",
-                value=None,
+                label_key="claim.project_type",
                 status="unknown",
-                note="Sem manifesto nem ficheiros de código",
+                note_key="note.project_type.none",
             )
         ]
 

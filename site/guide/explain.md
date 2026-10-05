@@ -27,9 +27,9 @@ For each question it selects the relevant claims deterministically. **If there a
 If [Ollama](https://ollama.com) is running on `localhost:11434` with the configured model (default `qwen2.5-coder:7b`), each answer also gets one to three sentences written by the model, marked ≈:
 
 ```text
-Onde estão os dados?
-  ≈ Os dados são armazenados em uma base de dados SQLite. [db.sqlite]
-  ✓ Base de dados: SQLite  ← package.json:13
+Where is the data?
+  ≈ The data is stored in an SQLite database. [db.sqlite]
+  ✓ Database: SQLite  ← package.json:13
 ```
 
 The rules that keep it honest:

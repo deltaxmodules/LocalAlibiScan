@@ -8,9 +8,15 @@ from datetime import datetime
 
 from . import __version__
 from .dashboard import Dashboard, Row
-from .detectors.project_kind import VERDICT_LABEL
+from .detectors.project_kind import verdict_label
+from .i18n import claim_label, claim_note, current, evidence_snippet, item_reason, t
 from .models import Claim
-from .render import SECTIONS, format_value
+from .render import format_value, sections
+
+HEAD_KEYS = (
+    "board.col.project", "board.col.type", "html.col.stack", "html.col.db", "html.col.services",
+    "html.col.last_change", "board.col.changes", "board.col.alerts",
+)
 
 STATUS_CLASS = {"confirmed": "ok", "inferred": "weak", "contradiction": "bad", "unknown": "unk"}
 
@@ -97,13 +103,15 @@ def _chips(values: list[str]) -> str:
 def _claim_html(claim: Claim) -> str:
     cls = STATUS_CLASS[claim.status]
     if claim.id == "files.important" and isinstance(claim.value, list):
-        value = "<br>".join(f"{i}. {_e(it['path'])} — {_e(it['reason'])}" for i, it in enumerate(claim.value, 1))
-        return f'<div class="claim {cls}"><span class="sym">{claim.symbol}</span>{_e(claim.label)}:<div class="ev">{value}</div></div>'
-    parts = [f'<div class="claim {cls}"><span class="sym">{claim.symbol}</span>{_e(claim.label)}: <b>{_e(format_value(claim))}</b>']
-    if claim.note:
-        parts.append(f'<div class="note">{_e(claim.note)}</div>')
+        value = "<br>".join(f"{i}. {_e(it['path'])} — {_e(item_reason(it))}" for i, it in enumerate(claim.value, 1))
+        return f'<div class="claim {cls}"><span class="sym">{claim.symbol}</span>{_e(claim_label(claim))}:<div class="ev">{value}</div></div>'
+    parts = [f'<div class="claim {cls}"><span class="sym">{claim.symbol}</span>{_e(claim_label(claim))}: <b>{_e(format_value(claim))}</b>']
+    note = claim_note(claim)
+    if note:
+        parts.append(f'<div class="note">{_e(note)}</div>')
     for ev in claim.evidence:
-        snippet = f" {_e(ev.snippet)}" if ev.snippet else ""
+        text = evidence_snippet(ev)
+        snippet = f" {_e(text)}" if text else ""
         parts.append(f'<div class="ev"><b>{_e(ev.location())}</b>{snippet}</div>')
     parts.append("</div>")
     return "".join(parts)
@@ -114,6 +122,8 @@ def _project_html(row: Row) -> str:
     name = ("≈ " if probable else "") + row.name
     last = row.last_change.strftime("%Y-%m-%d") if row.last_change else "?"
     source = row.profile.last_change_source if row.profile else None
+    if source == "files":
+        source = t("explain.source.files")
     alerts = row.alerts
     alert_html = (
         (f'<span class="bad">⚠ {alerts["contradiction"]}</span> ' if alerts["contradiction"] else "")
@@ -123,22 +133,20 @@ def _project_html(row: Row) -> str:
 
     body = []
     if row.error:
-        body.append(f'<div class="banner">Erro ao analisar: {_e(row.error)}</div>')
+        body.append(f'<div class="banner">{_e(t("html.error", error=row.error))}</div>')
     elif row.profile:
         if probable:
-            body.append('<div class="banner">≈ Provável projeto: sem .git nem manifesto; resultados por indícios.</div>')
+            body.append(f'<div class="banner">{_e(t("html.probable"))}</div>')
         by_cat: dict[str, list[Claim]] = {}
         for claim in row.profile.claims:
             by_cat.setdefault(claim.category, []).append(claim)
-        known = {c for c, _ in SECTIONS}
-        sections = SECTIONS + [(c, c.replace("_", " ").capitalize()) for c in by_cat if c not in known]
-        for cat, title in sections:
+        for cat, title in sections(by_cat):
             if by_cat.get(cat):
                 body.append(f"<h3>{_e(title)}</h3>" + "".join(_claim_html(c) for c in by_cat[cat]))
-        body.append(f'<div class="legend">Analisado em {_e(row.profile.scanned_at.isoformat())} · {_e(display_path(row.path))}</div>')
+        body.append(f'<div class="legend">{_e(t("html.scanned_at", when=row.profile.scanned_at.isoformat(), path=display_path(row.path)))}</div>')
 
     return f"""<details class="project" data-name="{_e(row.name.lower())}" data-time="{_e(row.last_change.isoformat() if row.last_change else '')}" data-langs="{_e('|'.join(row.languages))}" data-search="{_e(search)}">
-<summary><div class="name">{_e(name)}<small>{_e(VERDICT_LABEL.get(row.verdict, row.verdict))}</small></div>
+<summary><div class="name">{_e(name)}<small>{_e(verdict_label(row.verdict))}</small></div>
 <div>{_e(row.project_type)}</div><div class="chips">{_chips(row.stack)}</div><div class="chips">{_chips(row.databases)}</div>
 <div class="chips">{_chips(row.services)}</div><div>{_e(last)}{f' <small>({_e(source)})</small>' if source else ''}</div><div>{_e(row.changes)}</div><div class="alerts">{alert_html}</div></summary>
 <div class="body">{''.join(body)}</div></details>"""
@@ -152,11 +160,11 @@ def render_html(dashboard: Dashboard, generated_at: datetime | None = None) -> s
     icon, icon_dark = _icon_data_uri("icon-64.png"), _icon_data_uri("icon-dark-64.png")
     meta = json.dumps({"root": display_path(dashboard.root), "projects": len(dashboard.rows), "version": __version__})
     return f"""<!doctype html>
-<html lang="pt">
+<html lang="{_e(current())}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LocalAlibiScan — painel</title>
+<title>{_e(t("html.title"))}</title>
 <link rel="icon" type="image/png" href="{icon}" media="(prefers-color-scheme: light)">
 <link rel="icon" type="image/png" href="{icon_dark}" media="(prefers-color-scheme: dark)">
 <style>{CSS}</style>
@@ -164,18 +172,18 @@ def render_html(dashboard: Dashboard, generated_at: datetime | None = None) -> s
 <body>
 <main>
 <h1><img class="logo light" src="{icon}" alt=""><img class="logo dark" src="{icon_dark}" alt="">LocalAlibiScan</h1>
-<p class="sub">{len(dashboard.rows)} projetos em {_e(display_path(dashboard.root))} · gerado em {_e(generated_at.strftime('%Y-%m-%d %H:%M'))}</p>
+<p class="sub">{_e(t("html.sub", n=len(dashboard.rows), root=display_path(dashboard.root), when=generated_at.strftime('%Y-%m-%d %H:%M')))}</p>
 <div class="controls">
-<input id="q" type="search" placeholder="Procurar projeto, stack, serviço…" aria-label="Procurar">
-<select id="lang" aria-label="Linguagem"><option value="">Todas as linguagens</option>{options}</select>
-<select id="sort" aria-label="Ordenar"><option value="time">Última alteração</option><option value="name">Nome</option></select>
+<input id="q" type="search" placeholder="{_e(t("html.search"))}" aria-label="{_e(t("html.search.label"))}">
+<select id="lang" aria-label="{_e(t("html.language"))}"><option value="">{_e(t("html.all_languages"))}</option>{options}</select>
+<select id="sort" aria-label="{_e(t("html.sort"))}"><option value="time">{_e(t("html.col.last_change"))}</option><option value="name">{_e(t("html.sort.name"))}</option></select>
 </div>
-<div class="head"><div>Projeto</div><div>Tipo</div><div>Stack principal</div><div>Base de dados</div><div>Serviços externos</div><div>Última alteração</div><div>Mudou</div><div>Alertas</div></div>
+<div class="head">{"".join(f"<div>{_e(t(k))}</div>" for k in HEAD_KEYS)}</div>
 <div id="list">
 {projects}
 </div>
-<div id="none" class="empty" {'hidden' if dashboard.rows else ''}>Nenhum projeto.</div>
-<p class="legend">✓ confirmado · ≈ inferido · ⚠ contradição · ? desconhecido. Cada afirmação mostra o ficheiro e a linha de onde foi tirada.</p>
+<div id="none" class="empty" {'hidden' if dashboard.rows else ''}>{_e(t("html.none"))}</div>
+<p class="legend">{_e(t("html.legend"))}</p>
 </main>
 <script type="application/json" id="meta">{_e(meta)}</script>
 <script>{JS}</script>

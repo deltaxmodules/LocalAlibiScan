@@ -5,9 +5,9 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 
 from ..knowledge import CODE_LANGUAGES, language_of
-from ..models import Claim, Evidence
+from ..models import Claim
 from ..project import Project
-from .base import Detector, register
+from .base import Detector, gen_evidence, register
 
 
 def language_counts(project: Project) -> dict[str, list[str]]:
@@ -38,10 +38,9 @@ class LanguagesDetector(Detector):
                     project,
                     id="lang.primary",
                     category="language",
-                    label="Linguagem principal",
-                    value=None,
+                    label_key="claim.lang.primary",
                     status="unknown",
-                    note="Nenhum ficheiro de código encontrado",
+                    note_key="note.lang.none",
                 )
             ]
 
@@ -54,27 +53,23 @@ class LanguagesDetector(Detector):
                 project,
                 id="lang.primary",
                 category="language",
-                label="Linguagem principal",
+                label_key="claim.lang.primary",
                 value=primary,
                 status="confirmed",
                 evidence=[
-                    Evidence(
-                        file=".",
-                        kind="count",
-                        snippet=f"{len(files)} de {total} ficheiros de código ({exts})",
-                    ),
-                    Evidence(file=files[0], kind="file", snippet=f"ficheiro {primary}"),
+                    gen_evidence(".", "count", "ev.lang.share", n=len(files), total=total, exts=exts),
+                    gen_evidence(files[0], "file", "ev.lang.file", language=primary),
                 ],
             ),
             self.claim(
                 project,
                 id="lang.breakdown",
                 category="language",
-                label="Linguagens",
+                label_key="claim.lang.breakdown",
                 value={lang: len(f) for lang, f in counts.items()},
                 status="confirmed",
                 evidence=[
-                    Evidence(file=f[0], kind="count", snippet=f"{lang}: {len(f)} ficheiros")
+                    gen_evidence(f[0], "count", "ev.lang.count", language=lang, n=len(f))
                     for lang, f in counts.items()
                 ],
             ),

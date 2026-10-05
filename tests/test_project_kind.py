@@ -13,9 +13,9 @@ def test_not_a_project(fixture_copy, config) -> None:
     assert kind.verdict == "not_a_project"
     assert kind.claim.status == "confirmed"
     snippets = [e.snippet for e in kind.claim.evidence]
-    assert "0 manifestos conhecidos" in snippets
-    assert "sem pasta .git" in snippets
-    assert any("0 de 6 ficheiros (0%)" in s for s in snippets)
+    assert "0 known manifests" in snippets
+    assert "no .git folder" in snippets
+    assert any("0 of 6 files (0%)" in s for s in snippets)
 
 
 def test_projects_root(fixture_copy, config) -> None:

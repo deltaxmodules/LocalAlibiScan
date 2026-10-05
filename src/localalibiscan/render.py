@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING, Any
 from rich.console import Console
 from rich.markup import escape
 
-from .detectors.project_kind import VERDICT_LABEL, VERDICT_SYMBOL, KindResult
+from .detectors.project_kind import VERDICT_SYMBOL, KindResult, verdict_label
+from .i18n import claim_label, claim_note, claim_text_value, evidence_snippet, item_reason, t, tn
 from .models import Claim, Evidence, ProjectProfile
 
 if TYPE_CHECKING:
@@ -31,36 +32,31 @@ VERDICT_STYLE = {
     "not_a_project": "red",
 }
 
-SECTIONS: list[tuple[str, str]] = [
-    ("project", "Projeto"),
-    ("language", "Linguagens"),
-    ("entry_point", "Arranque"),
-    ("structure", "Estrutura"),
-    ("database", "Base de dados"),
-    ("orm", "ORM"),
-    ("framework", "Frameworks"),
-    ("service", "Serviços externos"),
-    ("route", "Rotas"),
-    ("docs_vs_code", "Documentação vs código"),
-    ("important_files", "Ficheiros importantes"),
-    ("docs", "Documentação"),
-    ("manifest", "Manifestos"),
-    ("dependency", "Dependências"),
-    ("script", "Scripts"),
-]
+# Ordem das secções do perfil; títulos em locales/ (`section.<categoria>`).
+SECTION_ORDER: tuple[str, ...] = (
+    "project", "language", "entry_point", "structure", "database", "orm", "framework", "service",
+    "route", "docs_vs_code", "important_files", "docs", "manifest", "dependency", "script",
+)
+
+
+def sections(categories) -> list[tuple[str, str]]:
+    """(categoria, título) pela ordem fixa, seguidas das categorias desconhecidas."""
+    out = [(cat, t(f"section.{cat}")) for cat in SECTION_ORDER]
+    out += [(cat, cat.replace("_", " ").capitalize()) for cat in categories if cat not in SECTION_ORDER]
+    return out
 COMPACT_CATEGORIES = frozenset({"dependency", "script", "route"})
 
 
 def format_value(claim: Claim) -> str:
-    value: Any = claim.value
+    value: Any = claim_text_value(claim)
     if value is None:
-        return "não determinado" if claim.status == "unknown" else "—"
+        return t("value.undetermined") if claim.status == "unknown" else "—"
     if claim.category == "route" and isinstance(value, dict):
         return f"[{value.get('framework')}]" + (f" {value['handler']}()" if value.get("handler") else "")
     if claim.category == "dependency" and isinstance(value, dict):
         return f"{value.get('spec') or '*'}" + (" (dev)" if value.get("dev") else "")
     if claim.id == "project.kind":
-        return VERDICT_LABEL.get(value, value)
+        return verdict_label(value)
     if isinstance(value, dict):
         return ", ".join(f"{k} {v}" for k, v in value.items())
     if isinstance(value, list):
@@ -77,12 +73,13 @@ def format_value(claim: Claim) -> str:
 
 def format_evidence(ev: Evidence) -> str:
     loc = f"[cyan]{escape(ev.location())}[/]"
-    return f"{loc}  [dim]{escape(ev.snippet)}[/]" if ev.snippet else loc
+    snippet = evidence_snippet(ev)
+    return f"{loc}  [dim]{escape(snippet)}[/]" if snippet else loc
 
 
 def render_claim(console: Console, claim: Claim, *, all_evidence: bool = False) -> None:
     style = STATUS_STYLE[claim.status]
-    head = f"  [{style}]{claim.symbol}[/] [bold]{escape(claim.label)}[/]"
+    head = f"  [{style}]{claim.symbol}[/] [bold]{escape(claim_label(claim))}[/]"
     value = escape(format_value(claim))
     if claim.category in COMPACT_CATEGORIES:
         loc = f"  [dim]←[/] [cyan]{escape(claim.evidence[0].location())}[/]" if claim.evidence else ""
@@ -97,30 +94,32 @@ def render_claim(console: Console, claim: Claim, *, all_evidence: bool = False) 
         console.print(f"{head}:", highlight=False)
         for i, item in enumerate(claim.value, start=1):
             console.print(
-                f"      {i:>2}. [cyan]{escape(item['path'])}[/]  [dim]{escape(item['reason'])}[/]",
+                f"      {i:>2}. [cyan]{escape(item['path'])}[/]  [dim]{escape(item_reason(item))}[/]",
                 highlight=False,
             )
         return
 
     console.print(f"{head}: {value}", highlight=False)
-    if claim.note:
-        console.print(f"      [italic dim]{escape(claim.note)}[/]", highlight=False)
+    note = claim_note(claim)
+    if note:
+        console.print(f"      [italic dim]{escape(note)}[/]", highlight=False)
     shown = claim.evidence if all_evidence else claim.evidence[:1]
     for ev in shown:
         console.print(f"      └ {format_evidence(ev)}", highlight=False)
     hidden = len(claim.evidence) - len(shown)
     if hidden > 0:
-        console.print(f"      [dim]  +{hidden} evidências (--evidence)[/]", highlight=False)
+        console.print(f"      [dim]  {escape(tn('profile.more_evidence', hidden))}[/]", highlight=False)
 
 
 def render_kind(console: Console, kind: KindResult, *, show_evidence: bool = True) -> None:
     style = VERDICT_STYLE[kind.verdict]
     console.print(
-        f"[{style}]{VERDICT_SYMBOL[kind.verdict]} {VERDICT_LABEL[kind.verdict]}[/]  [dim]{escape(str(kind.path))}[/]",
+        f"[{style}]{VERDICT_SYMBOL[kind.verdict]} {verdict_label(kind.verdict)}[/]  [dim]{escape(str(kind.path))}[/]",
         highlight=False,
     )
-    if kind.claim.note:
-        console.print(f"  [italic]{escape(kind.claim.note)}[/]", highlight=False)
+    note = claim_note(kind.claim)
+    if note:
+        console.print(f"  [italic]{escape(note)}[/]", highlight=False)
     if show_evidence and kind.verdict != "root":
         for ev in kind.claim.evidence:
             console.print(f"  └ {format_evidence(ev)}", highlight=False)
@@ -129,9 +128,9 @@ def render_kind(console: Console, kind: KindResult, *, show_evidence: bool = Tru
         for sub, ev in zip(kind.subprojects, kind.claim.evidence):
             rel = sub.relative_to(kind.path).as_posix()
             console.print(f"    • [bold]{escape(rel)}[/]  [dim]({escape(ev.file)})[/]", highlight=False)
-        console.print(f"\n  Sugestão: [bold]las dashboard {_q(kind.path)}[/]", highlight=False)
+        console.print(f"\n  {t('kind.suggestion')}: [bold]las dashboard {_q(kind.path)}[/]", highlight=False)
     elif kind.verdict == "subfolder" and kind.project_root:
-        console.print(f"\n  Sugestão: [bold]las scan {_q(kind.project_root)}[/]", highlight=False)
+        console.print(f"\n  {t('kind.suggestion')}: [bold]las scan {_q(kind.project_root)}[/]", highlight=False)
 
 
 SECTION_ALIASES = {
@@ -153,13 +152,11 @@ def render_profile(
     console: Console, profile: ProjectProfile, *, all_evidence: bool = False, only: set[str] | None = None
 ) -> None:
     if profile.verdict == "probable_project":
-        console.print(
-            "[bold yellow]≈ Provável projeto:[/] [yellow]sem .git nem manifesto. "
-            "Os resultados abaixo baseiam-se em indícios.[/]\n"
-        )
+        console.print(f"[bold yellow]{t('profile.probable.title')}[/] [yellow]{t('profile.probable.text')}[/]\n")
     elif profile.forced:
         console.print(
-            f"[bold yellow]Análise forçada:[/] [yellow]o veredito é «{VERDICT_LABEL[profile.verdict]}».[/]\n"
+            f"[bold yellow]{t('profile.forced.title')}[/] "
+            f"[yellow]{escape(t('profile.forced.text', verdict=verdict_label(profile.verdict)))}[/]\n"
         )
     console.print(f"[bold]{escape(profile.root)}[/]", highlight=False)
 
@@ -167,9 +164,7 @@ def render_profile(
     for claim in profile.claims:
         by_cat.setdefault(claim.category, []).append(claim)
 
-    known = [cat for cat, _ in SECTIONS]
-    order = SECTIONS + [(cat, cat.replace("_", " ").capitalize()) for cat in by_cat if cat not in known]
-    for cat, title in order:
+    for cat, title in sections(by_cat):
         claims = by_cat.get(cat)
         if not claims or (only is not None and cat not in only):
             continue
@@ -196,18 +191,18 @@ def render_dashboard(console: Console, board: Dashboard) -> None:
     from rich.table import Table
 
     table = Table(title=str(board.root), title_justify="left", show_lines=False, expand=True)
-    table.add_column("Projeto", style="bold", overflow="fold", ratio=3)
-    table.add_column("Tipo", overflow="fold", ratio=2)
-    table.add_column("Stack", overflow="fold", ratio=2)
-    table.add_column("BD", overflow="fold", ratio=2)
-    table.add_column("Serviços", overflow="fold", ratio=2)
-    table.add_column("Alterado", no_wrap=True)
-    table.add_column("Mudou", no_wrap=True)
-    table.add_column("Alertas", no_wrap=True)
+    table.add_column(t("board.col.project"), style="bold", overflow="fold", ratio=3)
+    table.add_column(t("board.col.type"), overflow="fold", ratio=2)
+    table.add_column(t("board.col.stack"), overflow="fold", ratio=2)
+    table.add_column(t("board.col.db"), overflow="fold", ratio=2)
+    table.add_column(t("board.col.services"), overflow="fold", ratio=2)
+    table.add_column(t("board.col.changed_at"), no_wrap=True)
+    table.add_column(t("board.col.changes"), no_wrap=True)
+    table.add_column(t("board.col.alerts"), no_wrap=True)
     for row in board.rows:
         name = ("≈ " if row.verdict == "probable_project" else "") + row.name
         if row.error:
-            table.add_row(escape(name), "[red]erro[/]", escape(row.error), "", "", "", "", "")
+            table.add_row(escape(name), f"[red]{t('board.error')}[/]", escape(row.error), "", "", "", "", "")
             continue
         last = row.last_change.astimezone().strftime("%Y-%m-%d") if row.last_change else "?"
         if row.profile and row.profile.last_change_source == "git":
@@ -231,8 +226,7 @@ def render_dashboard(console: Console, board: Dashboard) -> None:
         )
     console.print(table)
     console.print(
-        f"[dim]{len(board.rows)} projetos · {board.cached_count} da cache · {board.elapsed:.2f}s · "
-        "≈ provável projeto / inferido · ⚠ contradições · ? por determinar[/]",
+        f"[dim]{escape(t('board.footer', n=len(board.rows), cached=board.cached_count, secs=f'{board.elapsed:.2f}'))}[/]",
         highlight=False,
     )
 
@@ -242,13 +236,13 @@ DIFF_STYLE = {"+": "green", "-": "red", "~": "yellow", "⚠": "bold red"}
 
 def render_diff(console: Console, diff: Diff) -> None:
     if diff.empty:
-        console.print("[dim]Sem alterações desde a análise anterior.[/]")
+        console.print(f"[dim]{t('diff.none')}[/]")
         return
     for title, items in (
-        ("Novo", diff.added),
-        ("Removido", diff.removed),
-        ("Alterado", diff.changed),
-        ("Alertas", diff.alerts),
+        (t("diff.added"), diff.added),
+        (t("diff.removed"), diff.removed),
+        (t("diff.changed"), diff.changed),
+        (t("diff.alerts"), diff.alerts),
     ):
         if not items:
             continue
@@ -261,14 +255,14 @@ def render_diff(console: Console, diff: Diff) -> None:
 def render_explanation(console: Console, exp: Explanation) -> None:
     console.print(f"[bold]{escape(exp.profile.root)}[/]", highlight=False)
     if exp.model and not exp.llm_error:
-        console.print(f"[yellow]≈ Redação por IA ligada[/] [dim](modelo {escape(exp.model)}; só frases com citações válidas)[/]")
+        console.print(f"[yellow]{t('explain.ai_on')}[/] [dim]{escape(t('explain.ai_on.detail', model=exp.model))}[/]")
     else:
-        reason = exp.llm_error or "Ollama não disponível em localhost"
-        console.print(f"[dim]Redação por IA desligada: {escape(reason)}. Só factos.[/]")
+        reason = exp.llm_error or t("llm.unavailable_default")
+        console.print(f"[dim]{escape(t('explain.ai_off', reason=reason))}[/]")
     for a in exp.answers:
         console.print(f"\n[bold underline]{escape(a.question.text)}[/]")
         if a.unknown:
-            console.print("  [dim]? Sem factos para responder.[/]")
+            console.print(f"  [dim]{t('explain.no_facts')}[/]")
             continue
         if a.drafted:
             for sentence in a.drafted.sentences:
@@ -281,35 +275,35 @@ def render_explanation(console: Console, exp: Explanation) -> None:
         for claim in a.facts:
             if claim.id == "files.important" and isinstance(claim.value, list):
                 for i, item in enumerate(claim.value, start=1):
-                    console.print(f"  {i:>2}. [cyan]{escape(item['path'])}[/]  [dim]{escape(item['reason'])}[/]", highlight=False)
+                    console.print(f"  {i:>2}. [cyan]{escape(item['path'])}[/]  [dim]{escape(item_reason(item))}[/]", highlight=False)
                 continue
             style = STATUS_STYLE[claim.status]
             loc = f"  [dim]←[/] [cyan]{escape(claim.evidence[0].location())}[/]" if claim.evidence else ""
             console.print(
-                f"  [{style}]{claim.symbol}[/] {escape(claim.label)}: {escape(format_value(claim))}{loc}",
+                f"  [{style}]{claim.symbol}[/] {escape(claim_label(claim))}: {escape(format_value(claim))}{loc}",
                 highlight=False,
             )
 
 
 def render_ask(console: Console, result: AskResult, llm_note: str | None, *, brief: bool = False) -> None:
-    console.print(f"[bold]Pergunta:[/] {escape(result.question)}", highlight=False)
+    console.print(f"[bold]{t('ask.question')}[/] {escape(result.question)}", highlight=False)
     if not result.found:
-        console.print("\n[yellow]Não encontrei evidências sobre isto.[/] [dim](a LLM não foi chamada)[/]")
+        console.print(f"\n[yellow]{t('ask.not_found')}[/] [dim]{t('ask.not_found.llm')}[/]")
         if result.suggestions:
-            console.print(f"[dim]Termos que existem neste projeto:[/] {escape(', '.join(result.suggestions))}", highlight=False)
+            console.print(f"[dim]{t('ask.suggestions')}[/] {escape(', '.join(result.suggestions))}", highlight=False)
         return
     if result.answer and result.answer.sentences:
-        console.print(f"\n[yellow]≈ Resposta redigida pela IA a partir das evidências[/] [dim](modelo {escape(result.model or '')})[/]")
+        console.print(f"\n[yellow]{t('ask.ai_answer')}[/] [dim]{escape(t('ask.ai_answer.model', model=result.model or ''))}[/]")
         for sentence in result.answer.sentences:
             console.print(f"  [yellow]≈[/] {escape(sentence.text)} [dim]\\[{escape(', '.join(sentence.ids))}][/]", highlight=False)
         if result.answer.removed:
-            console.print(f"  [dim]{len(result.answer.removed)} frase(s) removida(s) pelo validador.[/]")
+            console.print(f"  [dim]{escape(tn('validator.removed', len(result.answer.removed)))}[/]")
     elif llm_note or result.llm_error:
-        console.print(f"\n[dim]Redação por IA desligada: {escape(result.llm_error or llm_note or '')}. Só evidências.[/]")
+        console.print(f"\n[dim]{escape(t('ask.ai_off', reason=result.llm_error or llm_note or ''))}[/]")
     else:
-        console.print("\n[dim]A IA não produziu frases com citações válidas. Só evidências.[/]")
+        console.print(f"\n[dim]{t('ask.ai_empty')}[/]")
 
-    console.print("\n[bold underline]Evidências encontradas[/]")
+    console.print(f"\n[bold underline]{t('ask.evidence')}[/]")
     for e in result.excerpts:
         console.print(f"  [cyan]{escape(e.file)}:{e.start}-{e.end}[/]  [dim]{escape('; '.join(e.reasons))}[/]", highlight=False)
         if brief:

@@ -37,6 +37,8 @@ Ferramenta local que diz o que cada projeto é, como está e o que mudou, e prov
 - Todo o claim que não é `unknown` tem pelo menos uma `Evidence` (há teste para isso).
 - Git só via `subprocess` com comandos de leitura (`log`, `status`, `rev-parse`).
 - Constantes e limiares vivem em `src/localalibiscan/config.py`.
+- Línguas (Fase 9): todo o texto mostrado ao utilizador passa por `i18n.t`/`tn` com chaves em `locales/en.py` (obrigatório) e `locales/pt.py`. Os detetores nunca escrevem texto solto: usam `label_key`/`value_key`/`note_key` + `params` em `Detector.claim` e `gen_evidence` para excertos gerados; grava-se o texto em inglês e traduz-se só ao mostrar (`claim_label`, `claim_note`, `claim_text_value`, `evidence_snippet`). A língua não entra na impressão digital da cache. `tests/test_i18n.py` falha se uma chave usada faltar em `en`.
+- Capturas do README/manual e página de exemplo: `scripts/gen_captures.py` (refazer quando muda um texto que aparece nelas).
 
 ## Desenvolvimento
 

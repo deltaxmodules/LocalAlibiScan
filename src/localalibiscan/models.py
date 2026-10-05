@@ -1,7 +1,8 @@
 """Modelos de dados (Pydantic v2).
 
 `Claim` e `Evidence` são o contrato central (SPEC.md, secção 4): nunca mudam de
-forma incompatível.
+forma incompatível. Os campos `*_key` + `params` (Fase 9) são opcionais: dizem
+como traduzir o texto gerado; o texto em `label`/`note`/`snippet` fica em inglês.
 """
 
 from __future__ import annotations
@@ -9,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_serializer
 
 SkipReason = Literal["too_large", "binary", "symlink", "unreadable"]
 
@@ -52,9 +53,28 @@ class Evidence(BaseModel):
     line: int | None = None  # 1-based; None quando a prova é o ficheiro inteiro
     snippet: str = ""
     kind: EvidenceKind
+    # Fase 9: o excerto é texto gerado (não uma linha do ficheiro) e traduz-se assim.
+    snippet_key: str | None = None
+    params: dict[str, Any] | None = None
+
+    @model_serializer(mode="wrap")
+    def _drop_empty_keys(self, handler):
+        return _without_empty_i18n(handler(self))
 
     def location(self) -> str:
         return f"{self.file}:{self.line}" if self.line else self.file
+
+
+I18N_FIELDS = ("label_key", "value_key", "note_key", "snippet_key", "params")
+
+
+def _without_empty_i18n(data):
+    """Campos de tradução vazios não se gravam: o JSON mantém a forma da secção 4."""
+    if isinstance(data, dict):
+        for name in I18N_FIELDS:
+            if name in data and data[name] is None:
+                del data[name]
+    return data
 
 
 def utcnow() -> datetime:
@@ -71,6 +91,15 @@ class Claim(BaseModel):
     source: str
     detected_at: datetime = Field(default_factory=utcnow)
     note: str | None = None
+    # Fase 9: chaves de tradução (ver i18n.py). Ausentes em perfis antigos.
+    label_key: str | None = None
+    value_key: str | None = None
+    note_key: str | None = None
+    params: dict[str, Any] | None = None
+
+    @model_serializer(mode="wrap")
+    def _drop_empty_keys(self, handler):
+        return _without_empty_i18n(handler(self))
 
     @property
     def symbol(self) -> str:

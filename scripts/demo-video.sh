@@ -28,7 +28,7 @@ what="${1:-all}"
 if [[ "$what" == all || "$what" == video ]]; then
     record las.tape
     # Capa: um fotograma da cena da documentação que mente.
-    ffmpeg -loglevel error -y -ss "${COVER_AT:-38}" -i "$repo/site/public/video/localalibiscan-demo.mp4" \
+    ffmpeg -loglevel error -y -ss "${COVER_AT:-34}" -i "$repo/site/public/video/localalibiscan-demo.mp4" \
         -frames:v 1 -q:v 3 "$repo/site/public/video/localalibiscan-demo.jpg"
 fi
 [[ "$what" == all || "$what" == gif ]] && record readme.tape

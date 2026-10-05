@@ -6,9 +6,9 @@ from collections import Counter
 from pathlib import PurePosixPath
 
 from ..knowledge import is_code
-from ..models import Claim, Evidence
+from ..models import Claim
 from ..project import Project
-from .base import Detector, register
+from .base import Detector, gen_evidence, register
 
 MAX_DIRS = 8
 
@@ -35,10 +35,9 @@ class StructureDetector(Detector):
                     project,
                     id="structure.main_dirs",
                     category="structure",
-                    label="Pastas principais",
-                    value=None,
+                    label_key="claim.structure",
                     status="unknown",
-                    note="Nenhum ficheiro de código para organizar",
+                    note_key="note.structure.none",
                 )
             ]
 
@@ -48,11 +47,9 @@ class StructureDetector(Detector):
                 project,
                 id="structure.main_dirs",
                 category="structure",
-                label="Pastas principais",
+                label_key="claim.structure",
                 value=[{"path": d, "code_files": n} for d, n in top],
                 status="confirmed",
-                evidence=[
-                    Evidence(file=d, kind="count", snippet=f"{n} ficheiros de código") for d, n in top
-                ],
+                evidence=[gen_evidence(d, "count", "ev.code_files", n=n) for d, n in top],
             )
         ]

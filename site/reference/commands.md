@@ -16,6 +16,13 @@ Every command is available as `las` and as `localalibiscan`. `FOLDER` defaults t
 | [`las ask`](#las-ask) | [Ask a question](../guide/ask): deterministic search first; the optional local model answers only from the evidence. |
 | [`las config`](#las-config) | Show the configuration in use; `--init` creates `~/.localalibi/config.toml`. |
 
+## Global options
+
+| Option | |
+|---|---|
+| `--version` | Show the version and exit. |
+| `--lang-ui` | Interface language: `en` (default) or `pt`. Goes before the command: `las --lang-ui pt scan .`. Same as `LOCALALIBI_LANG` or `[ui] language` in the [configuration](configuration). |
+
 ## las files
 
 ```bash

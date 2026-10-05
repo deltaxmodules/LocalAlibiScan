@@ -8,7 +8,7 @@ from pathlib import PurePosixPath
 from ..knowledge import in_non_product_dir
 from ..models import Claim, Evidence
 from ..project import Project
-from .base import Detector, register
+from .base import Detector, gen_evidence, register
 from .manifests import json_key_line, parse_manifests
 
 ENTRY_FILENAMES = frozenset({"main.py", "app.py", "manage.py", "__main__.py", "wsgi.py", "asgi.py"})
@@ -44,7 +44,7 @@ class EntryPointsDetector(Detector):
                 for script in m.scripts:
                     if script.name in ("start", "dev", "serve"):
                         found.append(
-                            (f"npm run {script.name}" + (f" em {m.directory}" if m.directory else ""),
+                            (f"npm run {script.name}" + (f" ({m.directory})" if m.directory else ""),
                              project.evidence(m.path, script.line, "manifest"))
                         )
             elif m.path.endswith("pyproject.toml"):
@@ -56,7 +56,7 @@ class EntryPointsDetector(Detector):
                 continue
             path = PurePosixPath(entry.path)
             if path.name in ENTRY_FILENAMES and len(path.parts) <= 3:
-                found.append((entry.path, project.evidence(entry.path, None, "file", "nome de ponto de entrada")))
+                found.append((entry.path, gen_evidence(entry.path, "file", "ev.entry_name")))
             if entry.extension == ".py":
                 pattern = MAIN_GUARD
             elif entry.extension == ".go":
@@ -76,10 +76,9 @@ class EntryPointsDetector(Detector):
                     project,
                     id="entry.points",
                     category="entry_point",
-                    label="Pontos de entrada",
-                    value=None,
+                    label_key="claim.entry",
                     status="unknown",
-                    note="Nenhum ponto de entrada reconhecido",
+                    note_key="note.entry.none",
                 )
             ]
 
@@ -92,7 +91,7 @@ class EntryPointsDetector(Detector):
                 project,
                 id="entry.points",
                 category="entry_point",
-                label="Pontos de entrada",
+                label_key="claim.entry",
                 value=list(values),
                 status="confirmed",
                 evidence=sorted(

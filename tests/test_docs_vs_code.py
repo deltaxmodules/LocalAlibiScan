@@ -34,7 +34,7 @@ def test_lying_readme_contradiction(fixture_copy, config) -> None:
     claims = docs_claims(root, config)
     c = claims["docs.contradiction.postgresql"]
     assert c.status == "contradiction"
-    assert c.value == "Documentação diz PostgreSQL, código usa SQLite"
+    assert c.value == "Documentation says PostgreSQL, code uses SQLite"
     locations = [e.location() for e in c.evidence]
     assert "README.md:8" in locations
     assert "src/db/database.ts:1" in locations
@@ -88,7 +88,7 @@ def test_ambiguous_migration_sentence_pt(tmp_path: Path, config) -> None:
     assert "docs.contradiction.postgresql" not in claims
     only = claims["docs.only.postgresql"]
     assert only.status == "inferred"
-    assert "ambígua" in only.note
+    assert "ambiguous" in only.note
 
 
 def test_ambiguous_migration_sentence_en(tmp_path: Path, config) -> None:
@@ -124,8 +124,8 @@ def test_ambiguous_names_count_in_lists_and_headings(tmp_path: Path, config) -> 
 
 def test_scan_shows_section(fixture_copy) -> None:
     result = runner.invoke(app, ["scan", str(fixture_copy("node_sqlite_lying_readme"))], env={"COLUMNS": "200"})
-    assert "Documentação vs código" in result.output
-    assert "⚠ Documentação vs código: Documentação diz PostgreSQL, código usa SQLite" in result.output
+    assert "Documentation vs code" in result.output
+    assert "⚠ Documentation vs code: Documentation says PostgreSQL, code uses SQLite" in result.output
     assert "README.md:8" in result.output
 
 
@@ -133,7 +133,7 @@ def test_negation_is_not_a_claim(tmp_path: Path, config) -> None:
     root = make(tmp_path / "p", "# App\n\nUses SQLite (no PostgreSQL needed).\n")
     claims = docs_claims(root, config)
     assert "docs.contradiction.postgresql" not in claims
-    assert "ambígua" in claims["docs.only.postgresql"].note
+    assert "ambiguous" in claims["docs.only.postgresql"].note
 
 
 def test_comparison_table_is_not_a_contradiction(tmp_path: Path, config) -> None:

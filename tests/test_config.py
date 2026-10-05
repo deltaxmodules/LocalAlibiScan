@@ -6,7 +6,7 @@ import pytest
 from typer.testing import CliRunner
 
 from localalibiscan.cli import app
-from localalibiscan.config import CONFIG_TEMPLATE, FIXED_EXCLUDED_DIRS, ConfigError, load_config
+from localalibiscan.config import FIXED_EXCLUDED_DIRS, ConfigError, config_template, load_config
 from localalibiscan.fs import ProjectFS
 
 runner = CliRunner()
@@ -20,7 +20,7 @@ def test_defaults_without_file(tmp_path: Path) -> None:
 
 def test_template_is_valid_and_matches_defaults(tmp_path: Path) -> None:
     f = tmp_path / "config.toml"
-    f.write_text(CONFIG_TEMPLATE)
+    f.write_text(config_template())
     cfg = load_config(f)
     assert cfg.max_file_size == 1024 * 1024
     assert cfg.root_max_depth == 2
@@ -66,7 +66,7 @@ def test_cli_config_init(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(cli, "load_config", lambda: replace(load_config(target), user_config_dir=target.parent))
     result = runner.invoke(app, ["config", "--init"])
     assert result.exit_code == 0, result.output
-    assert target.read_text() == CONFIG_TEMPLATE
+    assert target.read_text() == config_template()
     assert runner.invoke(app, ["config", "--init"]).exit_code == 1  # nunca sobrescreve
     shown = runner.invoke(app, ["config"], env={"COLUMNS": "200"}).output
-    assert "qwen2.5-coder:7b" in shown and "(existe)" in shown
+    assert "qwen2.5-coder:7b" in shown and "(exists)" in shown

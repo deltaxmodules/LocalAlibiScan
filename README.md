@@ -60,7 +60,9 @@ las config --init               # create ~/.localalibi/config.toml
 [example report built from well-known open-source projects](https://deltaxmodules.github.io/LocalAlibiScan/example/)
 (Express, Flask, httpx, Vite, the FastAPI full-stack template, …).
 
-> The terminal output and the HTML report are currently in **Portuguese**; the [manual](https://deltaxmodules.github.io/LocalAlibiScan/) explains every screen in English.
+The interface is in English by default and also speaks Portuguese:
+`las --lang-ui pt scan .`, `LOCALALIBI_LANG=pt`, or `language = "pt"` under `[ui]`
+in the configuration. The facts are the same in every language.
 
 ## Claims
 
@@ -70,7 +72,7 @@ Everything shown is a `Claim`:
 {
   "id": "db.sqlite",
   "category": "database",
-  "label": "Base de dados",
+  "label": "Database",
   "value": "SQLite",
   "status": "confirmed",
   "evidence": [
@@ -124,6 +126,9 @@ Known limitations are listed in [`docs/limitacoes.md`](https://github.com/deltax
 `~/.localalibi/config.toml` (create it with `las config --init`):
 
 ```toml
+[ui]
+language = "en"              # interface language: "en" or "pt"
+
 [scan]
 ignore = ["vendor"]          # extra folders to skip (node_modules, .venv, dist, ... are always skipped)
 max_file_size = 1048576      # larger files are listed but not read
@@ -137,8 +142,8 @@ model = "qwen2.5-coder:7b"
 timeout = 180
 ```
 
-Environment variables `LOCALALIBI_OLLAMA_MODEL` and `LOCALALIBI_OLLAMA_URL`
-override the file.
+Environment variables `LOCALALIBI_LANG`, `LOCALALIBI_OLLAMA_MODEL` and
+`LOCALALIBI_OLLAMA_URL` override the file; `las --lang-ui` overrides everything.
 
 The full manual is at **https://deltaxmodules.github.io/LocalAlibiScan/**, with a 90-second
 [demo video](https://deltaxmodules.github.io/LocalAlibiScan/#see-it-in-90-seconds).
@@ -153,7 +158,8 @@ uv venv -p 3.12 .venv && uv pip install -p .venv -e '.[dev]'
 The tool was built phase by phase from [`SPEC.md`](https://github.com/deltaxmodules/LocalAlibiScan/blob/main/SPEC.md) (in Portuguese);
 contributor rules live in [`CLAUDE.md`](https://github.com/deltaxmodules/LocalAlibiScan/blob/main/CLAUDE.md). Test projects are in
 `tests/fixtures/`. The manual is in `site/` (VitePress; `cd site && npx vitepress dev .`), its
-reference pages are generated with `python scripts/gen_reference.py`, and the demo video and GIF
+reference pages are generated with `python scripts/gen_reference.py`, the screenshots and example
+report with `python scripts/gen_captures.py`, and the demo video and GIF
 are recorded with `scripts/demo-video.sh` ([how](https://github.com/deltaxmodules/LocalAlibiScan/blob/main/docs/video/PLANO.md)).
 
 ## License

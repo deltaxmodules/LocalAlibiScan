@@ -3,14 +3,14 @@
 Every `las scan` compares what the documentation says with what the code proves. It **never edits** the documentation.
 
 ```text
-Documentação vs código
-  ⚠ Documentação vs código: Documentação diz PostgreSQL, código usa SQLite
-      Nenhum sinal de PostgreSQL no código (dependências, imports, configuração)
+Documentation vs code
+  ⚠ Documentation vs code: Documentation says PostgreSQL, code uses SQLite
+      No sign of PostgreSQL in the code (dependencies, imports, configuration)
       └ README.md:8  - PostgreSQL for persistence
       └ README.md:17  Set `DATABASE_URL` to your PostgreSQL connection string before starting.
       └ src/db/database.ts:1  import Database from 'better-sqlite3';
       └ package.json:13  "better-sqlite3": "^9.4.0"
-  ✓ Não documentado: SQLite
+  ✓ Not documented: SQLite
 ```
 
 ## Three kinds of findings
@@ -38,4 +38,4 @@ The extractor is deterministic — it looks for technology names line by line �
 - **Comparisons**: a line that also names the rival the code uses, such as a table `| SQLite | PostgreSQL |`.
 - **Common words**: *Express*, *Click*, *React* only count with that exact capitalisation and not at the start of an ordinary sentence ("Click the button") — they do count in lists and headings, where stacks are usually described.
 
-These become ≈ *"frase ambígua"* at most, never ⚠. More in [Known limitations](./limitations).
+These become ≈ *"ambiguous sentence"* at most, never ⚠. More in [Known limitations](./limitations).

@@ -16,7 +16,7 @@ from ..doc_mentions import DocMention, doc_mentions
 from ..models import Claim, Evidence
 from ..project import Project
 from ..tech import EXCLUSIVE_GROUPS, TECHS, Tech
-from .base import Detector, register
+from .base import Detector, gen_evidence, register
 from .docs import readme_paths
 from .technologies import Signals, tech_signals
 
@@ -86,11 +86,12 @@ class DocsVsCodeDetector(Detector):
                         project,
                         id=f"docs.contradiction.{tech_id}",
                         category="docs_vs_code",
-                        label="Documentação vs código",
-                        value=f"Documentação diz {tech.name}, código usa {rival.name}",
+                        label_key="claim.docs_vs_code",
+                        value_key="value.docs_contradiction",
                         status="contradiction",
                         evidence=_doc_evidence(clear) + _strongest_code_evidence(signals[rival.id]),
-                        note=f"Nenhum sinal de {tech.name} no código (dependências, imports, configuração)",
+                        note_key="note.docs_contradiction",
+                        params={"doc": tech.name, "code": rival.name},
                     )
                 )
             else:
@@ -99,14 +100,14 @@ class DocsVsCodeDetector(Detector):
                         project,
                         id=f"docs.only.{tech_id}",
                         category="docs_vs_code",
-                        label="Só na documentação",
+                        label_key="claim.docs_only",
                         value=tech.name,
                         status="inferred",
                         evidence=_doc_evidence(tech_mentions),
-                        note=(
-                            "mencionado na documentação, sem qualquer sinal no código"
+                        note_key=(
+                            "note.docs_only"
                             if any(not m.ambiguous for m in tech_mentions)
-                            else "frase ambígua (migração, negação ou comparação): pode não descrever o projeto atual"
+                            else "note.docs_only.ambiguous"
                         ),
                     )
                 )
@@ -121,12 +122,12 @@ class DocsVsCodeDetector(Detector):
                         project,
                         id=f"docs.undocumented.{tech.id}",
                         category="docs_vs_code",
-                        label="Não documentado",
+                        label_key="claim.undocumented",
                         value=tech.name,
                         status="confirmed",
                         evidence=_strongest_code_evidence(signals[tech.id])
-                        + [Evidence(file=readmes[0], kind="doc", snippet=f"não menciona {tech.name}")],
-                        note="confirmado no código, ausente da documentação",
+                        + [gen_evidence(readmes[0], "doc", "ev.not_mentioned", tech=tech.name)],
+                        note_key="note.undocumented",
                     )
                 )
         return claims

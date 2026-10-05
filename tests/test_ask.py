@@ -103,10 +103,10 @@ def test_cli_ask_without_llm(fixture_copy) -> None:
     env = {"COLUMNS": "200", "LOCALALIBI_OLLAMA_URL": "http://127.0.0.1:9"}
     ok = runner.invoke(app, ["ask", str(root), "Onde usamos OpenAI?"], env=env)
     assert ok.exit_code == 0, ok.output
-    assert "Redação por IA desligada" in ok.output
+    assert "AI drafting off" in ok.output
     assert "services/ai.py:1-7" in ok.output
     brief = runner.invoke(app, ["ask", str(root), "Onde usamos OpenAI?", "--brief"], env=env)
     assert "services/ai.py:1-7" in brief.output and "from openai import OpenAI" not in brief.output
     missing = runner.invoke(app, ["ask", str(root), "Onde está o pagamento Stripe?"], env=env)
     assert missing.exit_code == 1
-    assert "Não encontrei evidências sobre isto" in missing.output
+    assert "No evidence found about this" in missing.output

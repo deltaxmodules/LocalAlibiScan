@@ -65,8 +65,8 @@ def test_validator_keeps_only_valid_citations() -> None:
         "Tem rotas [route.GET /health, db.sqlite].",
     ]
     reasons = dict(v.removed)
-    assert reasons["Também usa Stripe para pagamentos [service.stripe]."] == "id inexistente: service.stripe"
-    assert reasons["É um projeto excelente."] == "sem citação"
+    assert reasons["Também usa Stripe para pagamentos [service.stripe]."] == "unknown id: service.stripe"
+    assert reasons["É um projeto excelente."] == "no citation"
 
 
 def test_structured_output_normalizes_bracketed_ids() -> None:
@@ -113,7 +113,7 @@ def test_every_sentence_in_overview_md_has_valid_citations(fixture_copy, config)
             for cited in group.split(","):
                 assert cited.strip() in ids, line
     assert "MongoDB" not in md and "Mongo." not in md
-    assert "≈ redigido pela IA a partir de factos" in md
+    assert "≈ drafted by AI from facts" in md
 
 
 # ------------------------------------------------------------------ sem Ollama
@@ -127,7 +127,7 @@ def test_explain_without_llm_shows_only_facts(fixture_copy, config) -> None:
     by_key = {a.question.key: a for a in exp.answers}
     assert by_key["apis"].facts[0].id == "service.openai"
     assert by_key["data"].unknown
-    assert by_key["what"].lines[0].startswith("Fonte: README.md:3")
+    assert by_key["what"].lines[0].startswith("Source: README.md:3")
 
 
 def test_llm_failure_keeps_facts(fixture_copy, config) -> None:
@@ -145,10 +145,10 @@ def test_cli_explain_without_ollama(fixture_copy) -> None:
         app, ["explain", str(root)], env={"COLUMNS": "200", "LOCALALIBI_OLLAMA_URL": "http://127.0.0.1:9"}
     )
     assert result.exit_code == 0, result.output
-    assert "Redação por IA desligada" in result.output
-    assert "Serviço externo: OpenAI" in result.output
+    assert "AI drafting off" in result.output
+    assert "External service: OpenAI" in result.output
     md = (root / ".localalibi" / "overview.md").read_text()
-    assert "Redação por IA indisponível" in md
+    assert "AI drafting unavailable" in md
     assert "`[service.openai]`" in md
 
 

@@ -147,14 +147,14 @@ def test_cli_dashboard_on_a_project_shows_profile(fixture_copy) -> None:
     root = fixture_copy("python_fastapi_openai")
     result = runner.invoke(app, ["dashboard", str(root)], env={"COLUMNS": "200"})
     assert result.exit_code == 0
-    assert "Serviço externo: OpenAI" in result.output
+    assert "External service: OpenAI" in result.output
     assert "las scan" in result.output
 
 
 def test_cli_dashboard_nothing_found(fixture_copy) -> None:
     result = runner.invoke(app, ["dashboard", str(fixture_copy("not_a_project"))], env={"COLUMNS": "200"})
     assert result.exit_code == 2
-    assert "Nenhum projeto encontrado" in result.output
+    assert "No projects found" in result.output
 
 
 def test_deep_root_inside_dashboard_is_expanded(tmp_path: Path, config) -> None:

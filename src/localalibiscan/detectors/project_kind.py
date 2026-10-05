@@ -15,17 +15,19 @@ from typing import Literal
 from ..config import CEILING_MARKER, Config, load_config
 from ..fs import ProjectFS
 from ..knowledge import MANIFEST_NAMES, is_code
+from ..i18n import DEFAULT_LANG, t
 from ..models import Claim, Evidence, utcnow
+from .base import gen_evidence
 
 Verdict = Literal["project", "root", "subfolder", "probable_project", "not_a_project"]
 
-VERDICT_LABEL: dict[str, str] = {
-    "project": "projeto de software",
-    "root": "pasta com vários projetos",
-    "subfolder": "subpasta de um projeto",
-    "probable_project": "provável projeto",
-    "not_a_project": "não é um projeto de software",
-}
+VERDICTS: tuple[str, ...] = ("project", "root", "subfolder", "probable_project", "not_a_project")
+
+
+def verdict_label(verdict: str, lang: str | None = None) -> str:
+    return t(f"verdict.{verdict}", lang=lang) if verdict in VERDICTS else verdict
+
+
 VERDICT_SYMBOL: dict[str, str] = {
     "project": "✓",
     "root": "▦",
@@ -146,19 +148,24 @@ def classify(path: str | Path, config: Config | None = None) -> KindResult:
     config = config or load_config()
     folder = Path(path).expanduser().resolve()
     if not folder.is_dir():
-        raise NotADirectoryError(f"Não é uma pasta: {folder}")
+        raise NotADirectoryError(t("error.not_a_folder", path=folder))
 
-    def make(verdict: Verdict, status: str, evidence: list[Evidence], note: str | None = None, **kw) -> KindResult:
+    def make(
+        verdict: Verdict, status: str, evidence: list[Evidence], note_key: str | None = None, params: dict | None = None, **kw
+    ) -> KindResult:
         claim = Claim(
             id="project.kind",
             category="project",
-            label="Tipo de pasta",
+            label=t("claim.kind", lang=DEFAULT_LANG),
             value=verdict,
             status=status,
             evidence=evidence,
             source="detector:project_kind",
             detected_at=utcnow(),
-            note=note,
+            note=t(note_key, lang=DEFAULT_LANG, **(params or {})) if note_key else None,
+            label_key="claim.kind",
+            note_key=note_key,
+            params=params,
         )
         return KindResult(path=folder, verdict=verdict, claim=claim, **kw)
 
@@ -179,7 +186,8 @@ def classify(path: str | Path, config: Config | None = None) -> KindResult:
             "root",
             "confirmed",
             evidence,
-            note=f"{len(subprojects)} projetos encontrados",
+            note_key="note.kind.root",
+            params={"n": len(subprojects)},
             subprojects=subprojects,
         )
 
@@ -192,7 +200,8 @@ def classify(path: str | Path, config: Config | None = None) -> KindResult:
             "subfolder",
             "confirmed",
             evidence,
-            note=f"Raiz do projeto: {project_root}",
+            note_key="note.kind.subfolder",
+            params={"root": str(project_root)},
             project_root=project_root,
         )
 
@@ -200,25 +209,21 @@ def classify(path: str | Path, config: Config | None = None) -> KindResult:
     entries = list(islice(ProjectFS(folder, config).walk(), config.kind_max_files))
     code = [e for e in entries if is_code(e.extension)]
     pct = round(100 * len(code) / len(entries)) if entries else 0
-    count_ev = Evidence(
-        file=".",
-        snippet=f"{len(code)} de {len(entries)} ficheiros ({pct}%) são código ou notebooks",
-        kind="count",
-    )
+    count_ev = gen_evidence(".", "count", "ev.kind.code_share", n=len(code), total=len(entries), pct=pct)
     if len(code) >= config.probable_min_code_files:
         evidence = [count_ev] + [
-            Evidence(file=e.path, kind="file", snippet="ficheiro de código") for e in code[:5]
+            gen_evidence(e.path, "file", "ev.code_file") for e in code[:5]
         ]
         return make(
             "probable_project",
             "inferred",
             evidence,
-            note="Sem .git nem manifesto: análise feita por indícios",
+            note_key="note.kind.probable",
         )
 
     evidence = [
-        Evidence(file=".", snippet="0 manifestos conhecidos", kind="count"),
-        Evidence(file=".", snippet="sem pasta .git", kind="git"),
+        gen_evidence(".", "count", "ev.kind.no_manifests"),
+        gen_evidence(".", "git", "ev.kind.no_git"),
         count_ev,
     ]
     return make("not_a_project", "confirmed", evidence)
@@ -226,5 +231,5 @@ def classify(path: str | Path, config: Config | None = None) -> KindResult:
 
 def _marker_evidence(marker: str, prefix: str = "") -> Evidence:
     if marker == ".git":
-        return Evidence(file=f"{prefix}.git", kind="git", snippet="repositório git")
-    return Evidence(file=f"{prefix}{marker}", kind="manifest", snippet="manifesto")
+        return gen_evidence(f"{prefix}.git", "git", "ev.kind.git")
+    return gen_evidence(f"{prefix}{marker}", "manifest", "ev.kind.manifest")

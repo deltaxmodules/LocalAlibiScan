@@ -194,12 +194,7 @@ TECHS: tuple[Tech, ...] = (
 
 TECH_BY_ID: dict[str, Tech] = {t.id: t for t in TECHS}
 
-CATEGORY_LABEL = {
-    "database": "Base de dados",
-    "orm": "ORM",
-    "framework": "Framework",
-    "service": "Serviço externo",
-}
+# Nomes das categorias: chaves `category.<categoria>` em locales/ (Fase 9).
 # Prefixo do id dos Claims de cada categoria.
 CATEGORY_PREFIX = {"database": "db", "orm": "orm", "framework": "framework", "service": "service"}
 

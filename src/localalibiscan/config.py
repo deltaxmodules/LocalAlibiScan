@@ -1,6 +1,6 @@
 """Configuração e constantes partilhadas.
 
-Por agora só valores por omissão; o ficheiro ~/.localalibi/config.toml chega na Fase 8.
+Valores por omissão, depois `~/.localalibi/config.toml`, depois o ambiente.
 """
 
 from __future__ import annotations
@@ -75,34 +75,27 @@ class Config:
     ollama_model: str = "qwen2.5-coder:7b"
     ollama_timeout: float = 180.0
 
+    # --- Fase 9: língua da interface ([ui] language). None = automática (ver i18n.py).
+    language: str | None = None
+
 
 CONFIG_FILE_NAME = "config.toml"
 
-CONFIG_TEMPLATE = """\
-# LocalAlibiScan — configuração do utilizador.
-# Precedência: valores por omissão < este ficheiro < variáveis de ambiente.
+def config_template() -> str:
+    """Conteúdo de `las config --init`, com os comentários na língua da interface."""
+    from .i18n import t
 
-[scan]
-# Pastas a ignorar além das fixas (node_modules, .venv, venv, dist, build, .git,
-# __pycache__, .next, target) e do .gitignore de cada projeto.
-ignore = []
-# Ficheiros maiores do que isto (bytes) são registados mas não lidos.
-max_file_size = 1048576
-
-[dashboard]
-# Níveis a descer à procura de projetos.
-depth = 2
-
-[ollama]
-# Só localhost é aceite. A redação com IA é opcional.
-url = "http://localhost:11434"
-model = "qwen2.5-coder:7b"
-timeout = 180
-"""
+    return t("config.template")
 
 
 class ConfigError(ValueError):
     """Ficheiro de configuração inválido."""
+
+
+def _t(key: str) -> str:
+    from .i18n import t
+
+    return t(key)
 
 
 def config_path() -> Path:
@@ -127,7 +120,7 @@ def load_config(path: Path | None = None) -> Config:
         scan = data.get("scan", {})
         if scan.get("ignore"):
             if not isinstance(scan["ignore"], list) or not all(isinstance(x, str) for x in scan["ignore"]):
-                raise ConfigError(f"{file}: [scan].ignore tem de ser uma lista de nomes de pastas")
+                raise ConfigError(f"{file}: {_t('config.error.ignore')}")
             overrides["excluded_dirs"] = FIXED_EXCLUDED_DIRS | frozenset(scan["ignore"])
         if "max_file_size" in scan:
             overrides["max_file_size"] = int(scan["max_file_size"])
@@ -137,6 +130,11 @@ def load_config(path: Path | None = None) -> Config:
         for key, field_name, cast in (("url", "ollama_url", str), ("model", "ollama_model", str), ("timeout", "ollama_timeout", float)):
             if key in ollama:
                 overrides[field_name] = cast(ollama[key])
+        language = data.get("ui", {}).get("language")
+        if language is not None:
+            if not isinstance(language, str):
+                raise ConfigError(f"{file}: {_t('config.error.language')}")
+            overrides["language"] = language
 
     if os.environ.get("LOCALALIBI_OLLAMA_MODEL"):
         overrides["ollama_model"] = os.environ["LOCALALIBI_OLLAMA_MODEL"]

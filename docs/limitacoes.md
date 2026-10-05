@@ -41,3 +41,17 @@ A interpretação de frases com LLM fica para a Fase 6 (opcional).
   dinamicamente (ciclos, strings construídas) não são detetadas.
 - Notebooks (`.ipynb`) contam para a linguagem mas o seu código não é analisado.
 - Só Python, JavaScript e TypeScript são analisados com tree-sitter.
+
+## Interface e línguas (Fase 9)
+
+- Só inglês (por omissão) e português. Outra língua cai para o inglês, chave a chave.
+- Perfis e histórico gravados pela 0.1.x não têm chaves de tradução: mostram o
+  texto em português com que foram gravados até à análise seguinte.
+- A ajuda (`--help`) escolhe a língua quando o programa arranca: `--lang-ui`
+  tem de vir antes do comando (`las --lang-ui pt scan --help`).
+- As frases que tornam uma menção ambígua (migração, negação, comparação) só
+  são reconhecidas em inglês e português; os nomes das tecnologias são
+  procurados em qualquer língua.
+- A LLM recebe os pedidos em inglês e é-lhe pedido que escreva na língua da
+  interface; modelos pequenos às vezes respondem noutra língua (o validador
+  só verifica as citações, não a língua).

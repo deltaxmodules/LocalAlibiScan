@@ -43,11 +43,11 @@ def test_refresh_shows_new_service_and_route(fixture_copy, config) -> None:
 
     result = scan(root, config)
     lines = texts(result.diff)
-    assert "+ Serviço OpenAI @ services/openai.ts:1" in lines
-    assert "+ Nova rota DELETE /notes/:id @ src/routes/notes.ts:16" in lines
-    assert "⚠ README ainda não menciona OpenAI @ services/openai.ts:1" in lines
-    assert any(l.startswith("~ Serviço OpenAI: 1 ficheiro novo") for l in lines)
-    assert any(l.startswith("~ Rotas: 1 ficheiro alterado") for l in lines)
+    assert "+ Service: OpenAI @ services/openai.ts:1" in lines
+    assert "+ New route DELETE /notes/:id @ src/routes/notes.ts:16" in lines
+    assert "⚠ README does not mention OpenAI yet @ services/openai.ts:1" in lines
+    assert any(l.startswith("~ Service OpenAI: 1 new file") for l in lines)
+    assert any(l.startswith("~ Routes: 1 file changed") for l in lines)
 
 
 def test_removed_important_file(fixture_copy, config) -> None:
@@ -55,8 +55,8 @@ def test_removed_important_file(fixture_copy, config) -> None:
     scan(root, config)
     (root / "src" / "db" / "database.ts").unlink()
     lines = texts(scan(root, config).diff)
-    assert any(l.startswith("- Ficheiro importante removido") and l.endswith("@ src/db/database.ts") for l in lines)
-    assert any(l.startswith("~ Base de dados SQLite: ✓ confirmado → ≈ inferido") for l in lines)
+    assert any(l.startswith("- Important file removed") and l.endswith("@ src/db/database.ts") for l in lines)
+    assert any(l.startswith("~ Database: SQLite: ✓ confirmed → ≈ inferred") for l in lines)
 
 
 def test_removed_service_and_dependency(fixture_copy, config) -> None:
@@ -66,8 +66,8 @@ def test_removed_service_and_dependency(fixture_copy, config) -> None:
     (root / "requirements.txt").write_text("fastapi==0.110.0\nuvicorn[standard]==0.29.0\npydantic==2.7.0\n")
     (root / ".env.example").unlink()
     lines = texts(scan(root, config).diff)
-    assert "- Serviço OpenAI @ services/ai.py:3" in lines  # onde estava o código
-    assert "- Dependência openai ==1.23.0 @ requirements.txt:3" in lines
+    assert "- Service: OpenAI @ services/ai.py:3" in lines  # onde estava o código
+    assert "- Dependency openai ==1.23.0 @ requirements.txt:3" in lines
 
 
 def test_works_without_git_and_counts_modified_files(fixture_copy, config) -> None:
@@ -77,7 +77,7 @@ def test_works_without_git_and_counts_modified_files(fixture_copy, config) -> No
     result = scan(root, config)
     assert result.profile.git_head is None
     lines = texts(result.diff)
-    assert any("1 ficheiro alterado" in l and "plot_results.py" in l for l in lines)
+    assert any("1 file changed" in l and "plot_results.py" in l for l in lines)
 
 
 def test_no_changes(fixture_copy, config) -> None:
@@ -99,13 +99,13 @@ def test_cli_refresh_and_history(fixture_copy) -> None:
     root = fixture_copy("node_sqlite_lying_readme")
     env = {"COLUMNS": "200"}
     out = runner.invoke(app, ["refresh", str(root)], env=env).output
-    assert "Primeira análise" in out
+    assert "First analysis" in out
     (root / "services").mkdir()
     (root / "services" / "openai.ts").write_text(OPENAI_TS)
     out = runner.invoke(app, ["refresh", str(root)], env=env).output
-    assert "+ Serviço OpenAI" in out and "services/openai.ts:1" in out
+    assert "+ Service: OpenAI" in out and "services/openai.ts:1" in out
     out = runner.invoke(app, ["history", str(root)], env=env).output
-    assert "primeira análise" in out
+    assert "first analysis" in out
     assert "+1" in out
 
 
@@ -117,7 +117,7 @@ def test_history_without_snapshots(fixture_copy) -> None:
 def test_dashboard_changed_column(fixture_copy, config) -> None:
     root = fixture_copy("projects_root")
     first = {r.name: r.changes for r in build_dashboard(root, config).rows}
-    assert set(first.values()) == {"novo"}
+    assert set(first.values()) == {"new"}
     target = root / "beta_web" / "server.js"
     target.write_text(target.read_text() + "fastify.post('/items', async () => ({}));\n")
     os.utime(target, None)

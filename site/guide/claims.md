@@ -6,7 +6,7 @@ Everything LocalAlibiScan shows is a **claim**. A claim has an id, a status and 
 {
   "id": "db.sqlite",
   "category": "database",
-  "label": "Base de dados",
+  "label": "Database",
   "value": "SQLite",
   "status": "confirmed",
   "evidence": [
@@ -16,6 +16,8 @@ Everything LocalAlibiScan shows is a **claim**. A claim has an id, a status and 
   "source": "detector:database"
 }
 ```
+
+Text that the tool generates (labels, notes, evidence such as "configuration file") is saved in English together with a translation key (`label_key`, `value_key`, `note_key`, `snippet_key` and `params`), so the same facts can be shown in [English or Portuguese](../reference/configuration) without analysing again.
 
 ## The four statuses
 

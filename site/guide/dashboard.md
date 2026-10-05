@@ -12,14 +12,14 @@ las dashboard ~/code --no-cache       # re-analyse everything
 
 | Column | Content |
 |---|---|
-| Projeto | path relative to the root; ≈ for a probable project |
-| Tipo | project type: `Python`, `Node.js/TypeScript`, `Monorepo (Python + Node.js/TypeScript)`, `≈Scripts Python`… |
+| Project | path relative to the root; ≈ for a probable project |
+| Type | project type: `Python`, `Node.js/TypeScript`, `Monorepo (Python + Node.js/TypeScript)`, `≈Python scripts`… |
 | Stack | frameworks (≈ when only declared), or the main language |
-| BD | databases (≈ when only declared) |
-| Serviços | external services: OpenAI, Anthropic, Stripe, AWS, Supabase… |
-| Alterado | last change: the newest of the last commit and the newest file (`git` when it came from git) |
-| Mudou | what changed since the previous analysis: `+2 -1 ~3 ⚠1`, `—` (nothing, served from cache) or `novo` |
-| Alertas | ⚠ contradictions and ? unknowns |
+| DB | databases (≈ when only declared) |
+| Services | external services: OpenAI, Anthropic, Stripe, AWS, Supabase… |
+| Changed | last change: the newest of the last commit and the newest file (`git` when it came from git) |
+| Since last | what changed since the previous analysis: `+2 -1 ~3 ⚠1`, `—` (nothing, served from cache) or `new` |
+| Alerts | ⚠ contradictions and ? unknowns |
 
 Rows are sorted by last change, newest first.
 

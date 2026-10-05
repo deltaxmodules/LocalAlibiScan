@@ -15,6 +15,7 @@ from datetime import datetime
 from pathlib import Path, PurePosixPath
 
 from .fs import FileNotReadable, ProjectFS
+from .i18n import claim_text_value, item_reason, t, tn
 from .models import Claim, ProjectProfile
 from .project import Project
 from .storage import connect, read_only
@@ -41,18 +42,10 @@ CREATE TABLE IF NOT EXISTS files (
 
 # Categorias cujos Claims aparecem como "+"/"-" no refresh.
 RELEVANT = ("service", "database", "orm", "framework", "route", "dependency", "entry_point")
+NOUN_CATEGORIES = ("service", "database", "orm", "framework")
 # Ordem de preferência para atribuir um ficheiro alterado a um componente.
 COMPONENT_PRIORITY = ("database", "orm", "service", "route", "framework", "entry_point")
-STATUS_PT = {"confirmed": "confirmado", "inferred": "inferido", "contradiction": "contradição", "unknown": "desconhecido"}
-CATEGORY_NOUN = {
-    "service": "Serviço",
-    "database": "Base de dados",
-    "orm": "ORM",
-    "framework": "Framework",
-    "route": "Rota",
-    "dependency": "Dependência",
-    "entry_point": "Ponto de entrada",
-}
+# Estados e nomes das categorias: chaves `status.<estado>` e `noun.<categoria>` em locales/.
 
 
 # --------------------------------------------------------------------- snapshots
@@ -179,7 +172,7 @@ class Diff:
 
     def summary(self) -> str:
         if self.empty:
-            return "sem alterações"
+            return t("diff.summary.none")
         parts = []
         for sign, items in (("+", self.added), ("-", self.removed), ("~", self.changed), ("⚠", self.alerts)):
             if items:
@@ -197,13 +190,16 @@ def _best_location(claim: Claim) -> str | None:
 
 def _describe(claim: Claim, added: bool) -> str:
     if claim.category == "route":
-        return f"{'Nova rota' if added else 'Rota removida'} {claim.label}"
+        return t("diff.route.added" if added else "diff.route.removed", route=claim.label)
     if claim.category == "dependency" and isinstance(claim.value, dict):
         spec = claim.value.get("spec") or ""
-        return f"Dependência {claim.label} {spec}".rstrip()
+        return t("diff.dependency", name=claim.label, spec=spec).rstrip()
     if claim.category == "entry_point":
-        return f"Pontos de entrada: {', '.join(claim.value) if isinstance(claim.value, list) else claim.value}"
-    return f"{CATEGORY_NOUN.get(claim.category, claim.label)} {claim.value}"
+        value = ", ".join(claim.value) if isinstance(claim.value, list) else claim.value
+        return t("diff.entry_points", value=value)
+    if claim.category in NOUN_CATEGORIES:
+        return t("diff.claim", noun=t(f"noun.{claim.category}"), value=claim_text_value(claim))
+    return f"{claim.label} {claim_text_value(claim)}"
 
 
 def _component_of(path: str, claims: list[Claim]) -> str:
@@ -213,15 +209,24 @@ def _component_of(path: str, claims: list[Claim]) -> str:
             continue
         if any(ev.file == path for ev in claim.evidence):
             rank = COMPONENT_PRIORITY.index(claim.category)
-            name = "Rotas" if claim.category == "route" else _describe(claim, True)
+            if claim.category == "route":
+                name = t("section.route")
+            elif claim.category in NOUN_CATEGORIES:
+                name = t("diff.component", noun=t(f"noun.{claim.category}"), value=claim_text_value(claim))
+            else:
+                name = _describe(claim, True)
             if claim.category == "entry_point":
-                name = "Arranque"
+                name = t("section.entry_point")
             if best is None or rank < best[0]:
                 best = (rank, name)
     if best:
         return best[1]
     parent = PurePosixPath(path).parent.as_posix()
-    return f"Outros ({parent})" if parent != "." else "Outros (raiz)"
+    return OTHER + t("diff.other", folder=parent if parent != "." else t("diff.other.root"))
+
+
+# Marca invisível para ordenar "Outros" no fim, em qualquer língua.
+OTHER = "\u2060"
 
 
 def diff_snapshots(prev: Snapshot, cur: Snapshot) -> Diff:
@@ -243,7 +248,12 @@ def diff_snapshots(prev: Snapshot, cur: Snapshot) -> Diff:
             diff.changed.append(
                 Change(
                     "~",
-                    f"{_describe(claim, True)}: {old.symbol} {STATUS_PT[old.status]} → {claim.symbol} {STATUS_PT[claim.status]}",
+                    t(
+                        "diff.status",
+                        what=_describe(claim, True),
+                        old=f"{old.symbol} {t(f'status.{old.status}')}",
+                        new=f"{claim.symbol} {t(f'status.{claim.status}')}",
+                    ),
                     _best_location(claim),
                 )
             )
@@ -258,37 +268,37 @@ def diff_snapshots(prev: Snapshot, cur: Snapshot) -> Diff:
     if important and isinstance(important.value, list):
         for item in important.value:
             if item["path"] not in cur.files:
-                diff.removed.append(Change("-", f"Ficheiro importante removido ({item['reason']})", item["path"]))
+                diff.removed.append(Change("-", t("diff.important_removed", reason=item_reason(item)), item["path"]))
 
     # Componentes alterados: ficheiros novos/modificados/removidos agrupados.
     groups: dict[str, dict[str, list[str]]] = {}
     for path in sorted(set(prev.files) | set(cur.files)):
         if path not in prev.files:
-            how = "novo"
+            how = "new"
         elif path not in cur.files:
-            how = "removido"
+            how = "removed"
         elif prev.files[path] != cur.files[path]:
-            how = "alterado"
+            how = "changed"
         else:
             continue
         claims = cur.claims if path in cur.files else prev.claims
         groups.setdefault(_component_of(path, claims), {}).setdefault(how, []).append(path)
-    for name, by_how in sorted(groups.items(), key=lambda kv: (kv[0].startswith("Outros"), kv[0])):
+    for name, by_how in sorted(groups.items(), key=lambda kv: (kv[0].startswith(OTHER), kv[0])):
         parts = []
-        for how in ("novo", "alterado", "removido"):
+        for how in ("new", "changed", "removed"):
             n = len(by_how.get(how, []))
             if n:
-                parts.append(f"{n} ficheiro{'s' if n > 1 else ''} {how}{'s' if n > 1 else ''}")
-        paths = [p for how in ("novo", "alterado", "removido") for p in by_how.get(how, [])]
+                parts.append(tn(f"diff.files.{how}", n))
+        paths = [p for how in ("new", "changed", "removed") for p in by_how.get(how, [])]
         sample = ", ".join(paths[:3]) + ("…" if len(paths) > 3 else "")
-        diff.changed.append(Change("~", f"{name}: {', '.join(parts)}", sample))
+        diff.changed.append(Change("~", f"{name.removeprefix(OTHER)}: {', '.join(parts)}", sample))
 
     # Novas contradições e novidades por documentar.
     for cid, claim in after.items():
         if cid in before:
             continue
         if claim.status == "contradiction":
-            diff.alerts.append(Change("⚠", str(claim.value), _best_location(claim)))
+            diff.alerts.append(Change("⚠", str(claim_text_value(claim)), _best_location(claim)))
         elif cid.startswith("docs.undocumented."):
-            diff.alerts.append(Change("⚠", f"README ainda não menciona {claim.value}", _best_location(claim)))
+            diff.alerts.append(Change("⚠", t("diff.undocumented", tech=claim.value), _best_location(claim)))
     return diff

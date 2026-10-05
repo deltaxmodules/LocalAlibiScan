@@ -58,6 +58,6 @@ $ las refresh ~/code/notes-api
 $ las ask ~/code/shop "Where is authentication done?"
 ```
 
-::: info The interface speaks Portuguese
-The terminal output and the HTML report are currently in Portuguese (the project was specified in Portuguese). This manual is in English; every screen is explained here.
+::: info English or Portuguese
+The interface is in English by default. For Portuguese: `las --lang-ui pt …`, `LOCALALIBI_LANG=pt`, or `language = "pt"` in the [configuration](./reference/configuration). The facts (claims, statuses, evidence) are the same in every language.
 :::

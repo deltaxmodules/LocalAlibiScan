@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .config import Config, load_config
 from .detectors.project_kind import discover_projects
+from .i18n import claim_text_value, t
 from .models import Claim, ProjectProfile
 from .scan import scan
 
@@ -40,7 +41,7 @@ class Row:
         claim = self.profile.get("project.type") if self.profile else None
         if not claim or claim.value is None:
             return "?"
-        return f"{'' if claim.status == 'confirmed' else claim.symbol}{claim.value}"
+        return f"{'' if claim.status == 'confirmed' else claim.symbol}{claim_text_value(claim)}"
 
     @property
     def stack(self) -> list[str]:
@@ -109,12 +110,12 @@ def build_dashboard(
             result = scan(path, config, use_cache=use_cache)
             row.profile, row.cached = result.profile, result.cached
             if result.first_scan:
-                row.changes = "novo"
+                row.changes = t("board.new")
             elif result.diff is not None:
                 row.changes = "—" if result.diff.empty else result.diff.summary()
             row.verdict = result.kind.verdict
             if result.profile is None:
-                row.error = f"não analisado: veredito «{result.kind.verdict}»"
+                row.error = t("board.not_analysed", verdict=result.kind.verdict)
         except Exception as exc:  # um projeto com problemas não deve parar o painel
             row.error = f"{type(exc).__name__}: {exc}"
         dashboard.rows.append(row)

@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from localalibiscan import i18n
 from localalibiscan.config import Config, load_config
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -55,6 +56,9 @@ def isolated_user_config(tmp_path_factory, monkeypatch) -> None:
     monkeypatch.setenv("LOCALALIBI_CONFIG", str(tmp_path_factory.getbasetemp() / "no-config.toml"))
     monkeypatch.delenv("LOCALALIBI_OLLAMA_MODEL", raising=False)
     monkeypatch.delenv("LOCALALIBI_OLLAMA_URL", raising=False)
+    # Interface na língua por omissão (inglês), salvo se o teste pedir outra.
+    monkeypatch.delenv("LOCALALIBI_LANG", raising=False)
+    i18n.set_language(None)
 
 
 @pytest.fixture

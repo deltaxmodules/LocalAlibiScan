@@ -7,7 +7,7 @@ from pathlib import PurePosixPath
 from ..knowledge import DOC_EXTENSIONS
 from ..models import Claim
 from ..project import Project
-from .base import Detector, register
+from .base import Detector, gen_evidence, register
 
 MAX_EVIDENCE = 20
 # Ficheiros .txt que são manifestos ou dados, não documentação.
@@ -46,11 +46,11 @@ class DocsDetector(Detector):
                     project,
                     id="docs.readme",
                     category="docs",
-                    label="README",
+                    label_key="claim.readme",
                     value=main,
                     status="confirmed",
                     evidence=[project.evidence(main, title_line, "doc")]
-                    + [project.evidence(p, None, "doc", "outro README") for p in readmes[1:MAX_EVIDENCE]],
+                    + [gen_evidence(p, "doc", "ev.other_readme") for p in readmes[1:MAX_EVIDENCE]],
                 )
             )
         else:
@@ -59,10 +59,9 @@ class DocsDetector(Detector):
                     project,
                     id="docs.readme",
                     category="docs",
-                    label="README",
-                    value=None,
+                    label_key="claim.readme",
                     status="unknown",
-                    note="Nenhum README encontrado",
+                    note_key="note.readme.none",
                 )
             )
 
@@ -73,11 +72,12 @@ class DocsDetector(Detector):
                     project,
                     id="docs.files",
                     category="docs",
-                    label="Documentação",
+                    label_key="claim.docs",
                     value=docs,
                     status="confirmed",
                     evidence=[project.evidence(p, None, "doc", "") for p in docs[:MAX_EVIDENCE]],
-                    note=f"{len(docs)} ficheiros" if len(docs) > MAX_EVIDENCE else None,
+                    note_key="note.files_count" if len(docs) > MAX_EVIDENCE else None,
+                    params={"n": len(docs)} if len(docs) > MAX_EVIDENCE else None,
                 )
             )
         return claims

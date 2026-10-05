@@ -15,7 +15,7 @@ from typing import Any
 from ..knowledge import PARSED_MANIFESTS, in_non_product_dir
 from ..models import Claim
 from ..project import Project
-from .base import Detector, register
+from .base import Detector, gen_evidence, register
 
 
 @dataclass
@@ -40,7 +40,8 @@ class Manifest:
     data: Any = None
     dependencies: list[Dependency] = field(default_factory=list)
     scripts: list[Script] = field(default_factory=list)
-    error: str | None = None
+    error: str | None = None  # chave de tradução (Fase 9)
+    error_params: dict[str, Any] = field(default_factory=dict)
 
     @property
     def directory(self) -> str:
@@ -66,7 +67,7 @@ def _parse(project: Project, path: str, ecosystem: str) -> Manifest:
     manifest = Manifest(path=path, ecosystem=ecosystem)
     text = project.text(path)
     if text is None:
-        manifest.error = "ficheiro não lido (grande ou binário)"
+        manifest.error = "manifest.error.unread"
         return manifest
     lines = text.splitlines()
     name = PurePosixPath(path).name
@@ -82,7 +83,8 @@ def _parse(project: Project, path: str, ecosystem: str) -> Manifest:
         elif name == "Cargo.toml":
             _parse_cargo(manifest, text, lines)
     except (ValueError, tomllib.TOMLDecodeError) as exc:
-        manifest.error = f"não foi possível ler: {exc}"
+        manifest.error = "manifest.error.parse"
+        manifest.error_params = {"error": str(exc)}
     return manifest
 
 
@@ -141,7 +143,7 @@ def _find(lines: list[str], pattern: str, start: int, stop: int) -> int | None:
 def _parse_json_manifest(m: Manifest, text: str, lines: list[str]) -> None:
     data = json.loads(text)
     if not isinstance(data, dict):
-        raise ValueError("o conteúdo não é um objeto JSON")
+        raise ValueError("not a JSON object")
     m.data = data
     sections = (
         [("dependencies", False), ("devDependencies", True), ("peerDependencies", False), ("optionalDependencies", False)]
@@ -264,10 +266,9 @@ class ManifestsDetector(Detector):
                     project,
                     id="manifest.files",
                     category="manifest",
-                    label="Manifestos",
-                    value=None,
+                    label_key="claim.manifests",
                     status="unknown",
-                    note="Nenhum manifesto conhecido encontrado",
+                    note_key="note.manifests.none",
                 )
             ]
 
@@ -276,7 +277,7 @@ class ManifestsDetector(Detector):
                 project,
                 id="manifest.files",
                 category="manifest",
-                label="Manifestos",
+                label_key="claim.manifests",
                 value=[m.path for m in manifests],
                 status="confirmed",
                 evidence=[project.evidence(m.path, None, "manifest", m.ecosystem) for m in manifests],
@@ -292,11 +293,11 @@ class ManifestsDetector(Detector):
                         project,
                         id=f"manifest.error.{m.path}",
                         category="manifest",
-                        label=f"Manifesto {m.path}",
-                        value=None,
+                        label_key="claim.manifest_file",
                         status="unknown",
-                        evidence=[project.evidence(m.path, None, "manifest", m.error)],
-                        note=m.error,
+                        evidence=[gen_evidence(m.path, "manifest", m.error, **m.error_params)],
+                        note_key=m.error,
+                        params={"path": m.path, **m.error_params},
                     )
                 )
                 continue
@@ -315,7 +316,7 @@ class ManifestsDetector(Detector):
                     value={"name": dep.name, "spec": dep.spec, "ecosystem": m.ecosystem, "dev": dep.dev},
                     status="confirmed",
                     evidence=[ev],
-                    note="declarada no manifesto",
+                    note_key="note.dep.declared",
                 )
             for script in m.scripts:
                 prefix = f"{m.directory}:" if m.directory else ""

@@ -41,7 +41,7 @@ def test_sqlite_confirmed_with_manifest_and_code(fixture_copy, config) -> None:
 def test_redis_declared_not_used_is_inferred(fixture_copy, config) -> None:
     redis = claims_for(fixture_copy("python_dep_unused"), config)["db.redis"]
     assert redis.status == "inferred"
-    assert "sem uso" in redis.note
+    assert "no usage" in redis.note
     assert [e.location() for e in redis.evidence] == ["requirements.txt:2"]
 
 
@@ -98,7 +98,7 @@ def test_code_without_dependency_is_confirmed_with_note(tmp_path: Path, config) 
     })
     stripe = claims_for(root, config)["service.stripe"]
     assert stripe.status == "confirmed"
-    assert stripe.note == "usado no código sem dependência declarada"
+    assert stripe.note == "used in the code without a declared dependency"
     assert [e.location() for e in stripe.evidence] == ["index.js:1", "index.js:2"]
 
 
@@ -117,7 +117,7 @@ def test_env_only_is_inferred(tmp_path: Path, config) -> None:
     root = write(tmp_path / "p", {"requirements.txt": "\n", ".env.example": "ANTHROPIC_API_KEY=\n"})
     claim = claims_for(root, config)["service.anthropic"]
     assert claim.status == "inferred"
-    assert claim.note == "só indícios de configuração"
+    assert claim.note == "configuration clues only"
 
 
 def test_connection_string_and_prisma_provider(tmp_path: Path, config) -> None:
@@ -190,9 +190,9 @@ def test_important_files_ranking(fixture_copy, config) -> None:
     top = {i["path"]: i["reason"] for i in important.value}
     paths = list(top)
     assert paths[0] == "main.py"
-    assert top["main.py"].startswith("Ponto de entrada")
-    assert "Define 2 rotas" in top["routes/chat.py"]
-    assert "Usa OpenAI" in top["services/ai.py"]
+    assert top["main.py"].startswith("Entry point")
+    assert "Defines 2 routes" in top["routes/chat.py"]
+    assert "Uses OpenAI" in top["services/ai.py"]
     assert ".env.example" not in top
     assert len(paths) <= 10
 

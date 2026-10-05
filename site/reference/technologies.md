@@ -13,7 +13,7 @@ This table is the single source used by the detectors (code, manifests, configur
 | **MySQL** | `mysql`, `mysql2` | `mysqlclient`, `pymysql`, `mysql-connector-python`, `aiomysql` | `mysql`, `mysql2`, `MySQLdb`, `pymysql`, `aiomysql` | `mysql://`, `mysql+` | — |
 | **MongoDB** | `mongodb`, `mongoose` | `pymongo`, `motor`, `mongoengine`, `beanie` | `mongodb`, `mongoose`, `pymongo`, `motor`, `mongoengine`, `beanie` | `mongodb://`, `mongodb+srv://` | — |
 | **Redis** | `redis`, `ioredis`, `@upstash/redis` | `redis`, `aioredis` | `redis`, `ioredis`, `aioredis`, `@upstash/redis` | `redis://`, `rediss://` | `REDIS_URL` |
-| **Supabase** (also serviço externo) | `@supabase/supabase-js`, `@supabase/ssr` | `supabase` | `@supabase/supabase-js`, `@supabase/ssr`, `supabase` | `.supabase.co` | `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+| **Supabase** (also external service) | `@supabase/supabase-js`, `@supabase/ssr` | `supabase` | `@supabase/supabase-js`, `@supabase/ssr`, `supabase` | `.supabase.co` | `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
 | **DynamoDB** | `@aws-sdk/client-dynamodb`, `@aws-sdk/lib-dynamodb` | — | `@aws-sdk/client-dynamodb`, `@aws-sdk/lib-dynamodb` | — | — |
 
 ## ORMs

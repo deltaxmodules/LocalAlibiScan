@@ -9,10 +9,9 @@ Este documento serve de guia para construir o LocalAlibiScan com o Claude Code, 
 
 | Fase | Estado | Etiqueta |
 |---|---|---|
-| 0 a 8 | Feitas | `fase-0` … `fase-8` |
-| 9 — Interface em inglês | Por fazer | — |
+| 0 a 9 | Feitas | `fase-0` … `fase-9` |
 
-Publicado: PyPI `localalibiscan` 0.1.2 (MIT). Feito para além do pedido nas fases: comando `las config`, manual em inglês (`site/`, VitePress, no GitHub Pages) com a referência gerada a partir do código, vídeo e GIF de demonstração (`scripts/demo-video.sh`), marca (logótipo e ícones) e CI em Linux/macOS/Windows.
+Publicado: PyPI `localalibiscan` 0.1.2 (MIT); a 0.2.0 traz a Fase 9. Feito para além do pedido nas fases: comando `las config`, manual em inglês (`site/`, VitePress, no GitHub Pages) com a referência gerada a partir do código, vídeo e GIF de demonstração (`scripts/demo-video.sh`), marca (logótipo e ícones) e CI em Linux/macOS/Windows.
 
 ---
 
@@ -91,6 +90,8 @@ Tudo gira à volta deste objeto. É definido na Fase 1 e nunca mais muda de form
 | `inferred` | ≈ | Indício fraco (só dependência, só nome de ficheiro, ou texto gerado pela LLM a partir de factos) |
 | `contradiction` | ⚠ | Duas fontes dizem coisas diferentes |
 | `unknown` | ? | Não foi possível determinar |
+
+**Tradução (Fase 9):** `Claim` tem ainda os campos opcionais `label_key`, `value_key`, `note_key` e `params`, e `Evidence` tem `snippet_key` e `params`, para o texto gerado pela ferramenta. Esse texto grava-se em inglês e traduz-se só na apresentação; os campos vazios não se gravam, por isso o JSON acima continua válido.
 
 **Regra de promoção:** dependência declarada sozinha → `inferred`. Dependência + uso no código → `confirmed`. Uso no código sem dependência declarada → `confirmed` com nota.
 
@@ -353,7 +354,7 @@ A fixture `node_sqlite_lying_readme` serve também para testar o caso "subpasta"
 **Entregar:**
 - Catálogos de mensagens em `src/localalibiscan/locales/` (`en` e `pt`), um ficheiro por língua, com chaves estáveis (ex. `verdict.not_a_project`). Sem dependências novas: um módulo `i18n.py` com `t(key, **params)`.
 - Escolha da língua, por esta ordem: opção `--lang-ui` (ou nome equivalente que não colida com o `--lang` do painel), variável `LOCALALIBI_LANG`, `language` em `~/.localalibi/config.toml`, e por omissão `en`. Uma chave que falte numa língua cai para `en` e nunca rebenta.
-- **Os factos não dependem da língua.** O `Claim` ganha campos opcionais `label_key`, `note_key` e `params` (alteração compatível; a secção 4 não muda de forma incompatível). Os detetores passam a preencher as chaves; `label` e `note` continuam a ser gravados (na língua por omissão) para compatibilidade.
+- **Os factos não dependem da língua.** O `Claim` ganha campos opcionais `label_key`, `value_key`, `note_key` e `params`, e a `Evidence` ganha `snippet_key` e `params` para excertos gerados ("ficheiro de configuração"); é uma alteração compatível, a secção 4 não muda de forma incompatível. Os detetores passam a preencher as chaves; `label`, `note` e `snippet` continuam a ser gravados (na língua por omissão) para compatibilidade.
 - A tradução faz-se **só na apresentação** (terminal, HTML, `overview.md`). `project.json`, `evidence.db` e `history.db` antigos, sem chaves, continuam a mostrar-se com o texto gravado.
 - A língua **não** entra na impressão digital da cache: mudar de língua não obriga a reanalisar.
 - Traduzir: ajuda da CLI (Typer), vereditos, perfil do `scan`, painel e relatório HTML, `refresh`/`history` (os textos "+/-/~/⚠"), perguntas fixas do `explain`, mensagens do `ask` ("Não encontrei evidências…") e avisos (Ollama desligado, `--force`, etc.).
@@ -364,13 +365,13 @@ A fixture `node_sqlite_lying_readme` serve também para testar o caso "subpasta"
 - Subir `__version__` (os detetores mudam).
 
 **Verificação:**
-- [ ] `las scan tests/fixtures/python_fastapi_openai` sem configuração mostra o perfil em inglês; com `LOCALALIBI_LANG=pt` mostra-o em português, com os mesmos estados, valores e evidências.
-- [ ] `las check tests/fixtures/not_a_project` em inglês → `✗ not a software project`, com as mesmas evidências.
-- [ ] `project.json` de duas análises (uma em cada língua) tem os mesmos `id`, `status`, `value` e evidências.
-- [ ] Um `project.json`/`history.db` criado pela versão 0.1.x (sem chaves) é lido e mostrado sem erros.
-- [ ] Mudar de língua e voltar a correr `las dashboard` usa a cache (sem reanalisar).
-- [ ] `las ask` "Where do we use OpenAI?" e "Onde usamos OpenAI?" citam o mesmo `services/ai.py:linha`.
-- [ ] Teste de chaves em falta passa; `pytest` passa; README e manual sem aviso de português.
+- [x] `las scan tests/fixtures/python_fastapi_openai` sem configuração mostra o perfil em inglês; com `LOCALALIBI_LANG=pt` mostra-o em português, com os mesmos estados, valores e evidências.
+- [x] `las check tests/fixtures/not_a_project` em inglês → `✗ not a software project`, com as mesmas evidências.
+- [x] `project.json` de duas análises (uma em cada língua) tem os mesmos `id`, `status`, `value` e evidências.
+- [x] Um `project.json`/`history.db` criado pela versão 0.1.x (sem chaves) é lido e mostrado sem erros.
+- [x] Mudar de língua e voltar a correr `las dashboard` usa a cache (sem reanalisar).
+- [x] `las ask` "Where do we use OpenAI?" e "Onde usamos OpenAI?" citam o mesmo `services/ai.py:linha`.
+- [x] Teste de chaves em falta passa; `pytest` passa; README e manual sem aviso de português.
 
 **Fora desta fase:** outras línguas além de `en` e `pt` (o mecanismo tem de as permitir, mas não se traduzem agora); tradução de texto da documentação do projeto analisado.
 

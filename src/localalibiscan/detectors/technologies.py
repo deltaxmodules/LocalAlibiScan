@@ -17,8 +17,8 @@ from ..code import code_index
 from ..knowledge import in_non_product_dir
 from ..models import Claim, Evidence
 from ..project import Project
-from ..tech import CATEGORY_LABEL, CATEGORY_PREFIX, TECHS, Tech, matches, matches_any, techs_in
-from .base import Detector, register
+from ..tech import CATEGORY_PREFIX, TECHS, Tech, matches, matches_any, techs_in
+from .base import Detector, gen_evidence, register
 from .manifests import parse_manifests
 
 MAX_EVIDENCE = 12
@@ -133,7 +133,7 @@ def tech_signals(project: Project) -> dict[str, Signals]:
                     signals[tech_id].add(signals[tech_id].code, project.evidence(entry.path, i, "config"))
         for tech in TECHS:
             if name in tech.config_files:
-                signals[tech.id].add(signals[tech.id].weak, project.evidence(entry.path, None, "config", "ficheiro de configuração"))
+                signals[tech.id].add(signals[tech.id].weak, gen_evidence(entry.path, "config", "ev.config_file"))
 
     project.cache["tech_signals"] = signals
     return signals
@@ -158,7 +158,6 @@ def _scan_env_file(project: Project, path: str, signals: dict[str, Signals]) -> 
 class TechDetector(Detector):
     category: str
     unknown_id: str | None = None
-    unknown_label: str = ""
 
     def detect(self, project: Project) -> list[Claim]:
         signals = tech_signals(project)
@@ -171,24 +170,24 @@ class TechDetector(Detector):
             if sig.code:
                 status = "confirmed"
                 if not sig.deps and not sig.stdlib_only:
-                    note = "usado no código sem dependência declarada"
+                    note = "note.tech.code_only"
             elif sig.deps:
                 status = "inferred"
-                note = "declarada no manifesto, sem uso encontrado no código"
+                note = "note.tech.dep_only"
             else:
                 status = "inferred"
-                note = "só indícios de configuração"
+                note = "note.tech.config_only"
             evidence = (sig.deps + sig.code + sig.weak)[:MAX_EVIDENCE]
             claims.append(
                 self.claim(
                     project,
                     id=f"{CATEGORY_PREFIX[self.category]}.{tech.id}",
                     category=self.category,
-                    label=CATEGORY_LABEL[self.category],
+                    label_key=f"category.{self.category}",
                     value=tech.name,
                     status=status,
                     evidence=evidence,
-                    note=note,
+                    note_key=note,
                 )
             )
         if not claims and self.unknown_id:
@@ -197,10 +196,9 @@ class TechDetector(Detector):
                     project,
                     id=self.unknown_id,
                     category=self.category,
-                    label=CATEGORY_LABEL[self.category],
-                    value=None,
+                    label_key=f"category.{self.category}",
                     status="unknown",
-                    note=self.unknown_label,
+                    note_key=f"note.{self.category}.none",
                 )
             )
         return claims
@@ -211,7 +209,6 @@ class DatabaseDetector(TechDetector):
     name = "database"
     category = "database"
     unknown_id = "db.engine"
-    unknown_label = "Nenhuma base de dados detetada"
 
 
 @register
@@ -225,7 +222,6 @@ class FrameworksDetector(TechDetector):
     name = "frameworks"
     category = "framework"
     unknown_id = "framework.main"
-    unknown_label = "Nenhuma framework detetada"
 
 
 @register
@@ -233,4 +229,3 @@ class ExternalServicesDetector(TechDetector):
     name = "external_services"
     category = "service"
     unknown_id = "service.external"
-    unknown_label = "Nenhum serviço externo detetado"

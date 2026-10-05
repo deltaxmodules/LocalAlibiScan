@@ -12,14 +12,15 @@ from pathlib import Path
 import typer
 
 from localalibiscan.cli import app
-from localalibiscan.tech import CATEGORY_LABEL, TECHS
+from localalibiscan.i18n import t as tr
+from localalibiscan.tech import TECHS
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "site" / "reference"
 
 HEADER = "<!-- Gerado por scripts/gen_reference.py a partir do código. Não editar à mão. -->\n\n"
 
-# Descrições em inglês para o manual (a ajuda da CLI está em português).
+# Descrições do manual (mais longas do que a ajuda da CLI, e com ligações).
 COMMAND_DOCS = {
     "files": "List the files that would be analysed, with extension and size (respects `.gitignore`; large and binary files are marked).",
     "check": "Show only the [folder verdict](../guide/folder-verdict) and its evidence. No analysis.",
@@ -44,6 +45,8 @@ OPTION_DOCS = {
     "--brief": "One line per piece of evidence, without code excerpts.",
     "--init": "Create `~/.localalibi/config.toml` with the defaults (never overwrites).",
     "--max-size": "Maximum size in bytes for a file to be read.",
+    "--version": "Show the version and exit.",
+    "--lang-ui": "Interface language: `en` (default) or `pt`. Goes before the command: `las --lang-ui pt scan .`. Same as `LOCALALIBI_LANG` or `[ui] language` in the [configuration](configuration).",
 }
 
 
@@ -56,6 +59,10 @@ def commands_md() -> str:
     names = list(group.commands)
     for name in names:
         out.append(f"| [`las {name}`](#las-{name}) | {COMMAND_DOCS[name].split('. ')[0].rstrip('.')}. |\n")
+    out.append("\n## Global options\n\n| Option | |\n|---|---|\n")
+    for p in group.params:
+        if p.param_type_name == "option" and p.opts[0] != "--help":
+            out.append(f"| `{p.opts[0]}` | {OPTION_DOCS[p.opts[0]]} |\n")
     for name in names:
         cmd = group.commands[name]
         args = " ".join(p.name.upper() for p in cmd.params if p.param_type_name == "argument")
@@ -85,7 +92,7 @@ def technologies_md() -> str:
                 continue
             cell = lambda xs: ", ".join(f"`{x}`" for x in xs) or "—"
             extra = list(t.env) + list(t.config_files)
-            also = f" (also {', '.join(CATEGORY_LABEL[c].lower() for c in t.also)})" if t.also else ""
+            also = f" (also {', '.join(tr(f"category.{c}", lang="en").lower() for c in t.also)})" if t.also else ""
             out.append(f"| **{t.name}**{also} | {cell(t.npm)} | {cell(t.pypi)} | {cell(t.imports)} | {cell(t.strings)} | {cell(extra)} |\n")
     return "".join(out)
 

@@ -17,6 +17,6 @@ The extractor is deterministic and doesn't interpret sentences. It handles migra
 
 ## Interface
 
-The terminal output and the HTML report are in Portuguese.
+The interface is available in English (default) and Portuguese. Profiles saved by version 0.1.x keep the Portuguese text they were saved with until the project is analysed again. Technology names in the documentation are matched in any language, but the sentences that mark a mention as ambiguous ("migrated from", "instead of", "no longer"…) are recognised only in English and Portuguese.
 
 The full list (in Portuguese) is kept in [`docs/limitacoes.md`](https://github.com/deltaxmodules/LocalAlibiScan/blob/main/docs/limitacoes.md).

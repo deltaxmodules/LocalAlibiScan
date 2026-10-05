@@ -19,6 +19,7 @@ from pathlib import PurePosixPath
 from .code import code_index
 from .knowledge import in_non_product_dir
 from .drafting import Validated, structured_to_text, validate
+from .i18n import claim_label, t
 from .llm import LLMUnavailable, TextModel
 from .models import Claim, ProjectProfile
 from .project import Project
@@ -41,23 +42,25 @@ STOPWORDS = frozenset(
 SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
     ("autenticacao", "autenticar", "auth", "authentication", "authenticate", "login", "logout", "signin",
      "signup", "session", "sessao", "jwt", "token", "password", "senha", "oauth", "passport", "nextauth",
-     "credentials", "credenciais"),
+     "credentials", "credenciais", "autorizacao", "authorization", "permissions", "permissoes", "roles"),
     ("pagamento", "pagamentos", "pagar", "payment", "payments", "billing", "checkout", "stripe",
      "invoice", "fatura", "faturas", "subscription", "assinatura"),
     ("dados", "bd", "database", "db", "sql", "sqlite", "postgres", "postgresql", "mysql", "mongodb",
      "query", "queries", "schema", "migration", "migracao", "orm", "prisma", "sqlalchemy"),
-    ("email", "emails", "mail", "smtp", "sendgrid", "resend", "nodemailer", "correio"),
+    ("email", "emails", "mail", "smtp", "sendgrid", "resend", "nodemailer", "correio", "notificacao",
+     "notificacoes", "notification", "notifications"),
     ("upload", "uploads", "storage", "armazenamento", "s3", "bucket"),
     ("teste", "testes", "test", "tests", "pytest", "jest", "vitest"),
-    ("configuracao", "configuracoes", "config", "settings", "env", "environment", "variaveis"),
+    ("configuracao", "configuracoes", "config", "settings", "env", "environment", "variaveis", "variables",
+     "definicoes"),
     ("rota", "rotas", "endpoint", "endpoints", "route", "routes", "router", "api"),
     ("ia", "ai", "llm", "openai", "anthropic", "ollama", "gpt", "claude", "gemini", "prompt", "chat"),
     ("interface", "ui", "frontend", "componente", "componentes", "component", "components", "page",
-     "pagina", "paginas", "view", "views"),
+     "pagina", "paginas", "view", "views", "screen", "screens", "ecra"),
     ("log", "logs", "logging", "logger"),
     ("cache", "redis"),
-    ("erro", "erros", "error", "errors", "exception", "excecao", "excecoes"),
-    ("arranque", "arranca", "start", "main", "entrypoint", "inicio", "bootstrap"),
+    ("erro", "erros", "error", "errors", "exception", "excecao", "excecoes", "falha", "failure"),
+    ("arranque", "arranca", "start", "startup", "starts", "main", "entrypoint", "inicio", "bootstrap"),
 )
 
 
@@ -153,29 +156,29 @@ def search(project: Project, profile: ProjectProfile, question: str) -> tuple[li
     for claim in profile.claims:
         if claim.status == "unknown" or claim.category in ("important_files", "language", "structure", "manifest"):
             continue
-        text = " ".join([claim.id, claim.label, json.dumps(claim.value, ensure_ascii=False) if claim.value else ""])
+        text = " ".join([claim.id, claim.label, claim_label(claim), json.dumps(claim.value, ensure_ascii=False) if claim.value else ""])
         m = matched(text)
         if m:
             score = 4 if claim.category in ("service", "database", "orm", "framework", "route") else 2
             for ev in claim.evidence[:4]:
                 kind_bonus = 1 if ev.kind == "code" else 0
-                add(ev.file, ev.line, f"{claim.label}: {_short_value(claim)}", score + kind_bonus, m)
+                add(ev.file, ev.line, f"{claim_label(claim)}: {_short_value(claim)}", score + kind_bonus, m)
 
     index = code_index(project)
     for path, facts in index.files.items():
         for sym in facts.functions + facts.classes:
             m = matched(sym.name)
             if m:
-                add(path, sym.line, f"define {sym.name}", 3, m)
+                add(path, sym.line, t("ask.reason.defines", name=sym.name), 3, m)
         for imp in facts.imports:
             m = matched(imp.module) | set().union(*(matched(n) for n in imp.names)) if imp.names else matched(imp.module)
             if m:
-                add(path, imp.line, f"importa {imp.module}", 2, m)
+                add(path, imp.line, t("ask.reason.imports", module=imp.module), 2, m)
 
     for path in project.paths:
         m = matched(PurePosixPath(path).stem)
         if m:
-            add(path, 1, "nome do ficheiro", 1, m)
+            add(path, 1, t("ask.reason.filename"), 1, m)
 
     return terms, hits
 
@@ -225,13 +228,14 @@ def suggestions(profile: ProjectProfile, project: Project) -> list[str]:
     return list(dict.fromkeys(out))[:12]
 
 
+# Pedido em inglês; a resposta sai na língua da pergunta.
 ASK_SYSTEM = (
-    "Respondes a perguntas sobre um projeto de software usando APENAS os excertos de código fornecidos. "
-    "Nunca uses conhecimento externo nem inventes ficheiros, funções ou serviços. Respondes na mesma "
-    "língua em que a pergunta foi escrita. Cada frase diz o que acontece naquele sítio (que função, que "
-    "rota, o que faz) e cita, em «ids», as localizações ficheiro:linha dos excertos que a suportam. "
-    "Não repitas a mesma frase para sítios diferentes. Se os excertos não chegarem para responder, "
-    "diz isso numa frase citando o excerto mais próximo."
+    "You answer questions about a software project using ONLY the code excerpts provided. "
+    "Never use outside knowledge or invent files, functions or services. Answer in the same "
+    "language the question was written in. Each sentence says what happens at that place (which function, "
+    "which route, what it does) and cites, in \"ids\", the file:line locations of the excerpts that support it. "
+    "Do not repeat the same sentence for different places. If the excerpts are not enough to answer, "
+    "say so in one sentence citing the closest excerpt."
 )
 
 
@@ -239,13 +243,13 @@ def answer_with_llm(result: AskResult, model: TextModel) -> None:
     blocks = []
     for e in result.excerpts:
         numbered = "\n".join(f"{n}: {text}" for n, text in zip(range(e.start, e.end + 1), e.lines))
-        blocks.append(f"### {e.file} (linhas {e.start}-{e.end})\n{numbered}")
+        blocks.append(f"### {e.file} (lines {e.start}-{e.end})\n{numbered}")
     prompt = (
-        f"Pergunta: {result.question}\n\n"
-        "Responde em 1 a 4 frases curtas. Cada frase cita em «ids» uma ou mais localizações no formato "
-        "ficheiro:linha (ex.: «pasta/ficheiro.py:12»), escolhidas das linhas numeradas abaixo.\n"
-        'Devolve só JSON: {"sentences": [{"text": "<frase>", "ids": ["<ficheiro>:<linha>"]}]}\n\n'
-        "Excertos:\n" + "\n\n".join(blocks)
+        f"Question: {result.question}\n\n"
+        "Answer in 1 to 4 short sentences. Each sentence cites in \"ids\" one or more locations in the format "
+        "file:line (e.g. \"folder/file.py:12\"), chosen from the numbered lines below.\n"
+        'Return only JSON: {"sentences": [{"text": "<sentence>", "ids": ["<file>:<line>"]}]}\n\n'
+        "Excerpts:\n" + "\n\n".join(blocks)
     )
     raw = model.generate(prompt, system=ASK_SYSTEM, json_mode=True)
     try:

@@ -8,6 +8,10 @@ las config            # shows the configuration in use and where it comes from
 ```
 
 ```toml
+[ui]
+# Interface language: "en" or "pt" (also LOCALALIBI_LANG or las --lang-ui).
+language = "en"
+
 [scan]
 # Folders to skip in addition to the fixed ones (node_modules, .venv, venv, dist,
 # build, .git, __pycache__, .next, target, site-packages, any virtualenv) and
@@ -29,10 +33,11 @@ timeout = 180
 
 ## Precedence
 
-Defaults < `config.toml` < environment variables:
+Defaults < `config.toml` < environment variables < command-line options:
 
 | Variable | Overrides |
 |---|---|
+| `LOCALALIBI_LANG` | `[ui] language` (`las --lang-ui` overrides both) |
 | `LOCALALIBI_OLLAMA_MODEL` | `[ollama] model` |
 | `LOCALALIBI_OLLAMA_URL` | `[ollama] url` (must still be localhost) |
 | `LOCALALIBI_CONFIG` | path of the configuration file itself |
