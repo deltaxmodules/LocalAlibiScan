@@ -14,6 +14,7 @@ from dataclasses import dataclass
 
 from ..code import FileFacts, code_index
 from ..code.index import CodeIndex
+from ..knowledge import in_non_product_dir
 from ..models import Claim
 from ..project import Project
 from .base import Detector, register
@@ -206,6 +207,8 @@ def find_routes(project: Project) -> list[Route]:
     index = code_index(project)
     routes: list[Route] = []
     for path, facts in index.files.items():
+        if in_non_product_dir(path):
+            continue
         if facts.language == "python":
             routes.extend(_python_routes(project, index, path, facts))
         else:

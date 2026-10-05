@@ -239,3 +239,19 @@ def test_medium_project_under_30_seconds(tmp_path: Path, config) -> None:
     elapsed = time.perf_counter() - start
     assert result.profile is not None
     assert elapsed < 30, f"{elapsed:.1f}s"
+
+
+def test_tests_examples_and_templates_are_not_evidence(tmp_path: Path, config) -> None:
+    root = write(tmp_path / "p", {
+        "package.json": '{\n  "dependencies": {\n    "express": "4"\n  }\n}\n',
+        "server.js": "const express = require('express');\nconst app = express();\napp.get('/a', h);\n",
+        "examples/redis-cache/index.js": "const redis = require('redis');\nconst app = require('express')();\napp.get('/x', h);\n",
+        "tests/db.test.js": "const Database = require('better-sqlite3');\n",
+        "templates/template-react/src/App.jsx": "import React from 'react';\n",
+        "packages/create/template-vue/main.js": "import { createApp } from 'vue';\n",
+        "examples/demo/package.json": '{\n  "dependencies": {\n    "mongodb": "6"\n  }\n}\n',
+    })
+    claims = claims_for(root, config)
+    for absent in ("db.redis", "db.sqlite", "db.mongodb", "framework.react", "framework.vue", "dep.npm.mongodb"):
+        assert absent not in claims, absent
+    assert [c.label for c in claims.values() if c.category == "route"] == ["GET /a"]

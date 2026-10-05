@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shlex
+import sys
 from datetime import datetime
 from dataclasses import replace
 from pathlib import Path
@@ -357,6 +358,10 @@ def _human_size(size: int) -> str:
 
 
 def main() -> None:
+    # Consolas do Windows em cp1252 não imprimem ✓ ≈ ⚠ ✗: força UTF-8 na saída.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure") and (stream.encoding or "").lower().replace("-", "") != "utf8":
+            stream.reconfigure(encoding="utf-8", errors="replace")
     app()
 
 

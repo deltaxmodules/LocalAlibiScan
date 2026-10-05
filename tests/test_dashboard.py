@@ -114,12 +114,15 @@ def test_html_is_self_contained(fixture_copy, config) -> None:
 
 
 def test_html_escapes_content(tmp_path: Path, config) -> None:
-    p = tmp_path / "root" / "<script>alert(1)</script>"
-    p.mkdir(parents=True)
-    (p / "go.mod").write_text("module x\n")
-    (tmp_path / "root" / "other").mkdir()
-    (tmp_path / "root" / "other" / "go.mod").write_text("module y\n")
-    page = render_html(build_dashboard(tmp_path / "root", config))
+    root = tmp_path / "root"
+    for name in ("one", "two"):
+        (root / name).mkdir(parents=True)
+        (root / name / "package.json").write_text('{\n  "dependencies": {\n    "express": "4"\n  }\n}\n')
+    (root / "one" / "server.js").write_text(
+        "const express = require('express');\nconst app = express();\n"
+        "app.get('/<script>alert(1)</script>', (req, res) => res.end());\n"
+    )
+    page = render_html(build_dashboard(root, config))
     assert "<script>alert(1)</script>" not in page
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in page
 

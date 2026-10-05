@@ -100,9 +100,19 @@ def is_code(extension: str) -> bool:
 
 # Pastas cujo código não é "do projeto" para efeitos de arranque/estrutura.
 NON_PRODUCT_DIRS: frozenset[str] = frozenset(
-    {"test", "tests", "__tests__", "spec", "fixtures", "examples", "example", "docs", "e2e"}
+    {
+        "test", "tests", "__tests__", "spec", "specs", "fixtures", "testdata", "__mocks__", "e2e",
+        "examples", "example", "samples", "sample", "demo", "demos", "playground", "playgrounds",
+        "benchmarks", "benchmark", "bench", "docs",
+        "template", "templates", "scaffold", "scaffolds", "boilerplate",
+    }
 )
+# Prefixos de pastas de modelos (ex.: "template-react" em geradores de projetos).
+NON_PRODUCT_PREFIXES: tuple[str, ...] = ("template-", "example-", "demo-")
 
 
 def in_non_product_dir(path: str) -> bool:
-    return any(part.lower() in NON_PRODUCT_DIRS for part in path.split("/")[:-1])
+    return any(
+        part.lower() in NON_PRODUCT_DIRS or part.lower().startswith(NON_PRODUCT_PREFIXES)
+        for part in path.split("/")[:-1]
+    )

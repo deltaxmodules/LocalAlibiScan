@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import PurePosixPath
 from typing import Any
 
-from ..knowledge import PARSED_MANIFESTS
+from ..knowledge import PARSED_MANIFESTS, in_non_product_dir
 from ..models import Claim
 from ..project import Project
 from .base import Detector, register
@@ -55,6 +55,8 @@ def parse_manifests(project: Project) -> list[Manifest]:
             p = PurePosixPath(entry.path)
             if p.name not in PARSED_MANIFESTS or len(p.parts) - 1 > project.config.manifest_max_depth:
                 continue
+            if in_non_product_dir(entry.path):
+                continue  # examples/, tests/, playground/...: não são dependências do projeto
             found.append(_parse(project, entry.path, PARSED_MANIFESTS[p.name]))
         project.cache["manifests"] = sorted(found, key=lambda m: (m.path.count("/"), m.path))
     return project.cache["manifests"]

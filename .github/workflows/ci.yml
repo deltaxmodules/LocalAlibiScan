@@ -22,6 +22,10 @@ jobs:
       - name: Install
         run: python -m pip install -e ".[dev]"
       - name: Test
+        # Os testes escrevem ficheiros com acentos sem indicar codificação; o produto
+        # indica sempre UTF-8 (e o smoke test abaixo corre sem esta variável).
+        env:
+          PYTHONUTF8: "1"
         run: python -m pytest
 
   clean-install:

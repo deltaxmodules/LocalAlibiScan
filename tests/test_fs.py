@@ -18,7 +18,7 @@ from .conftest import FIXTURES, tree_hash
 def project(tmp_path: Path) -> Path:
     root = tmp_path / "proj"
     root.mkdir()
-    (root / "main.py").write_text("print('hi')\n")
+    (root / "main.py").write_bytes(b"print('hi')\n")  # LF em todas as plataformas
     return root
 
 

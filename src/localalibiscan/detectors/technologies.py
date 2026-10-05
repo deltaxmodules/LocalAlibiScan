@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import PurePosixPath
 
 from ..code import code_index
+from ..knowledge import in_non_product_dir
 from ..models import Claim, Evidence
 from ..project import Project
 from ..tech import CATEGORY_LABEL, CATEGORY_PREFIX, TECHS, Tech, matches, matches_any, techs_in
@@ -80,6 +81,8 @@ def tech_signals(project: Project) -> dict[str, Signals]:
     # 2) código: imports, utilização dos nomes importados e literais de texto
     index = code_index(project)
     for path, facts in index.files.items():
+        if in_non_product_dir(path):
+            continue  # código de testes/exemplos não prova o que o projeto usa
         for imp in facts.imports:
             package = index.external_package(facts, imp)
             if package is None:
@@ -106,6 +109,8 @@ def tech_signals(project: Project) -> dict[str, Signals]:
 
     # 3) configuração: .env.example, docker-compose, ficheiros de config, schema.prisma
     for entry in project.readable():
+        if in_non_product_dir(entry.path):
+            continue
         name = PurePosixPath(entry.path).name
         if name in ENV_FILES:
             _scan_env_file(project, entry.path, signals)
