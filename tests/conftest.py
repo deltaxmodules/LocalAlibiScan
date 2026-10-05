@@ -49,6 +49,14 @@ def _git_init(path: Path) -> None:
     run("-c", "user.name=test", "-c", "user.email=test@example.com", "commit", "-q", "-m", "init")
 
 
+@pytest.fixture(autouse=True)
+def isolated_user_config(tmp_path_factory, monkeypatch) -> None:
+    """Os testes nunca leem o ~/.localalibi/config.toml real do utilizador."""
+    monkeypatch.setenv("LOCALALIBI_CONFIG", str(tmp_path_factory.getbasetemp() / "no-config.toml"))
+    monkeypatch.delenv("LOCALALIBI_OLLAMA_MODEL", raising=False)
+    monkeypatch.delenv("LOCALALIBI_OLLAMA_URL", raising=False)
+
+
 @pytest.fixture
 def config(tmp_path: Path) -> Config:
     """Config isolada: a pasta pessoal e a de configuração ficam em tmp."""

@@ -89,4 +89,5 @@ def save_evidence(fs: ProjectFS, profile: ProjectProfile) -> int:
 
 def read_only(path: Path) -> sqlite3.Connection:
     """Ligação só de leitura (para testes e consultas)."""
-    return sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    # as_uri() trata espaços e letras de unidade (Windows).
+    return sqlite3.connect(f"{Path(path).resolve().as_uri()}?mode=ro", uri=True)

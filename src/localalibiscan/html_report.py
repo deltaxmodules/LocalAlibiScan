@@ -64,6 +64,17 @@ q.addEventListener('input',apply);lang.addEventListener('change',apply);sort.add
 """
 
 
+def display_path(path: object) -> str:
+    """Caminho para mostrar: a pasta pessoal aparece como "~" (relatórios partilháveis)."""
+    from pathlib import Path
+
+    p = Path(str(path))
+    try:
+        return "~/" + p.relative_to(Path.home()).as_posix()
+    except ValueError:
+        return p.as_posix()
+
+
 def _e(value: object) -> str:
     return html.escape(str(value), quote=True)
 
@@ -113,7 +124,7 @@ def _project_html(row: Row) -> str:
         for cat, title in sections:
             if by_cat.get(cat):
                 body.append(f"<h3>{_e(title)}</h3>" + "".join(_claim_html(c) for c in by_cat[cat]))
-        body.append(f'<div class="legend">Analisado em {_e(row.profile.scanned_at.isoformat())} · {_e(row.path)}</div>')
+        body.append(f'<div class="legend">Analisado em {_e(row.profile.scanned_at.isoformat())} · {_e(display_path(row.path))}</div>')
 
     return f"""<details class="project" data-name="{_e(row.name.lower())}" data-time="{_e(row.last_change.isoformat() if row.last_change else '')}" data-langs="{_e('|'.join(row.languages))}" data-search="{_e(search)}">
 <summary><div class="name">{_e(name)}<small>{_e(VERDICT_LABEL.get(row.verdict, row.verdict))}</small></div>
@@ -127,7 +138,7 @@ def render_html(dashboard: Dashboard, generated_at: datetime | None = None) -> s
     langs = sorted({lang for row in dashboard.rows for lang in row.languages})
     options = "".join(f'<option value="{_e(l)}">{_e(l)}</option>' for l in langs)
     projects = "\n".join(_project_html(r) for r in dashboard.rows)
-    meta = json.dumps({"root": str(dashboard.root), "projects": len(dashboard.rows), "version": __version__})
+    meta = json.dumps({"root": display_path(dashboard.root), "projects": len(dashboard.rows), "version": __version__})
     return f"""<!doctype html>
 <html lang="pt">
 <head>
@@ -139,7 +150,7 @@ def render_html(dashboard: Dashboard, generated_at: datetime | None = None) -> s
 <body>
 <main>
 <h1>LocalAlibiScan</h1>
-<p class="sub">{len(dashboard.rows)} projetos em {_e(dashboard.root)} · gerado em {_e(generated_at.strftime('%Y-%m-%d %H:%M'))}</p>
+<p class="sub">{len(dashboard.rows)} projetos em {_e(display_path(dashboard.root))} · gerado em {_e(generated_at.strftime('%Y-%m-%d %H:%M'))}</p>
 <div class="controls">
 <input id="q" type="search" placeholder="Procurar projeto, stack, serviço…" aria-label="Procurar">
 <select id="lang" aria-label="Linguagem"><option value="">Todas as linguagens</option>{options}</select>

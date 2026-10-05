@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+needs_symlinks = pytest.mark.skipif(os.name == "nt", reason="ligações simbólicas exigem privilégios no Windows")
+
 from localalibiscan.config import FIXED_EXCLUDED_DIRS, load_config
 from localalibiscan.fs import FileNotReadable, ProjectFS, ReadOnlyViolation
 
@@ -41,7 +43,7 @@ def paths(pfs: ProjectFS) -> list[str]:
         "src/x.py",
         ".localalibi/../main.py",  # escapar com ..
         ".localalibi",  # a própria pasta
-        "/tmp/localalibi_escape.txt",  # caminho absoluto fora
+        str(Path(os.sep) / "tmp" / "localalibi_escape.txt"),  # caminho absoluto fora
     ],
 )
 def test_write_outside_output_dir_raises(pfs: ProjectFS, project: Path, target: str) -> None:
@@ -53,7 +55,7 @@ def test_write_outside_output_dir_raises(pfs: ProjectFS, project: Path, target: 
     with pytest.raises(ReadOnlyViolation):
         pfs.delete(target)
     assert tree_hash(project) == before
-    assert not Path("/tmp/localalibi_escape.txt").exists()
+    assert not (Path(os.sep) / "tmp" / "localalibi_escape.txt").exists()
 
 
 def test_write_inside_output_dir_allowed(pfs: ProjectFS, project: Path) -> None:
@@ -70,6 +72,7 @@ def test_write_in_user_config_dir_allowed(pfs: ProjectFS, tmp_path: Path) -> Non
     assert (tmp_path / "user_cfg/dashboard.html").exists()
 
 
+@needs_symlinks
 def test_symlink_inside_output_dir_cannot_escape(pfs: ProjectFS, project: Path) -> None:
     pfs.ensure_output_dir()
     os.symlink(project / "main.py", project / ".localalibi/link.py")
@@ -78,6 +81,7 @@ def test_symlink_inside_output_dir_cannot_escape(pfs: ProjectFS, project: Path) 
     assert (project / "main.py").read_text() == "print('hi')\n"
 
 
+@needs_symlinks
 def test_output_dir_as_symlink_is_refused(pfs: ProjectFS, project: Path) -> None:
     (project / "src").mkdir()
     os.symlink(project / "src", project / ".localalibi")
@@ -149,6 +153,7 @@ def test_large_and_binary_files_registered_not_read(project: Path) -> None:
     assert pfs.read_text("main.py") == "print('hi')\n"
 
 
+@needs_symlinks
 def test_symlinks_not_followed(pfs: ProjectFS, project: Path, tmp_path: Path) -> None:
     outside = tmp_path / "outside"
     outside.mkdir()

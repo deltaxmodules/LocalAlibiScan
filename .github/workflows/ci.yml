@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    name: pytest (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+      - name: Test
+        run: python -m pytest
+
+  clean-install:
+    # Verificação da Fase 8: instalar com pipx numa máquina limpa e usar o painel.
+    name: pipx install (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build wheel
+        run: |
+          python -m pip install build
+          python -m build
+      - name: pipx install
+        run: |
+          python -m pip install pipx
+          python -m pipx install dist/*.whl
+          python -m pipx ensurepath
+      - name: Smoke test
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          las --help
+          las check tests/fixtures/not_a_project
+          las scan tests/fixtures/python_fastapi_openai
+          las dashboard tests/fixtures/projects_root --html
+          test -f "$HOME/.localalibi/dashboard.html"

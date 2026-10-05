@@ -76,10 +76,68 @@ class Config:
     ollama_timeout: float = 180.0
 
 
-def load_config() -> Config:
+CONFIG_FILE_NAME = "config.toml"
+
+CONFIG_TEMPLATE = """\
+# LocalAlibiScan — configuração do utilizador.
+# Precedência: valores por omissão < este ficheiro < variáveis de ambiente.
+
+[scan]
+# Pastas a ignorar além das fixas (node_modules, .venv, venv, dist, build, .git,
+# __pycache__, .next, target) e do .gitignore de cada projeto.
+ignore = []
+# Ficheiros maiores do que isto (bytes) são registados mas não lidos.
+max_file_size = 1048576
+
+[dashboard]
+# Níveis a descer à procura de projetos.
+depth = 2
+
+[ollama]
+# Só localhost é aceite. A redação com IA é opcional.
+url = "http://localhost:11434"
+model = "qwen2.5-coder:7b"
+timeout = 180
+"""
+
+
+class ConfigError(ValueError):
+    """Ficheiro de configuração inválido."""
+
+
+def config_path() -> Path:
     import os
 
-    overrides = {}
+    custom = os.environ.get("LOCALALIBI_CONFIG")
+    return Path(custom).expanduser() if custom else USER_CONFIG_DIR / CONFIG_FILE_NAME
+
+
+def load_config(path: Path | None = None) -> Config:
+    """Valores por omissão, depois `~/.localalibi/config.toml`, depois o ambiente."""
+    import os
+    import tomllib
+
+    overrides: dict = {}
+    file = path or config_path()
+    if file.is_file():
+        try:
+            data = tomllib.loads(file.read_text(encoding="utf-8"))
+        except (tomllib.TOMLDecodeError, OSError) as exc:
+            raise ConfigError(f"{file}: {exc}") from exc
+        scan = data.get("scan", {})
+        if scan.get("ignore"):
+            if not isinstance(scan["ignore"], list) or not all(isinstance(x, str) for x in scan["ignore"]):
+                raise ConfigError(f"{file}: [scan].ignore tem de ser uma lista de nomes de pastas")
+            overrides["excluded_dirs"] = FIXED_EXCLUDED_DIRS | frozenset(scan["ignore"])
+        if "max_file_size" in scan:
+            overrides["max_file_size"] = int(scan["max_file_size"])
+        if "depth" in data.get("dashboard", {}):
+            overrides["root_max_depth"] = int(data["dashboard"]["depth"])
+        ollama = data.get("ollama", {})
+        for key, field_name, cast in (("url", "ollama_url", str), ("model", "ollama_model", str), ("timeout", "ollama_timeout", float)):
+            if key in ollama:
+                overrides[field_name] = cast(ollama[key])
+
     if os.environ.get("LOCALALIBI_OLLAMA_MODEL"):
         overrides["ollama_model"] = os.environ["LOCALALIBI_OLLAMA_MODEL"]
     if os.environ.get("LOCALALIBI_OLLAMA_URL"):

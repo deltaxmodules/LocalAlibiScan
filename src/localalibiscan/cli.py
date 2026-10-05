@@ -10,10 +10,11 @@ from typing import Annotated
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 from rich.table import Table
 
 from . import __version__
-from .config import load_config
+from .config import CONFIG_TEMPLATE, FIXED_EXCLUDED_DIRS, config_path, load_config
 from .detectors.project_kind import classify
 from .fs import ProjectFS
 from .dashboard import build_dashboard
@@ -315,6 +316,35 @@ def _llm_client(config, no_llm: bool, model: str | None) -> tuple[OllamaClient |
     if not client.available():
         return None, f"Ollama ou modelo {client.model} não disponível em {config.ollama_url}"
     return client, None
+
+
+@app.command()
+def config(
+    init: Annotated[
+        bool, typer.Option("--init", help="Cria ~/.localalibi/config.toml com os valores por omissão.")
+    ] = False,
+) -> None:
+    """Mostra a configuração em uso (e onde está o ficheiro)."""
+    path = config_path()
+    if init:
+        if path.exists():
+            console.print(f"Já existe: {path}", highlight=False)
+            raise typer.Exit(code=1)
+        cfg = load_config()
+        written = ProjectFS(Path.home(), cfg).write_text(path, CONFIG_TEMPLATE)
+        console.print(f"Criado: {written}", highlight=False)
+        return
+    cfg = load_config()
+    console.print(f"Ficheiro: {path} {'(existe)' if path.exists() else '(não existe — use --init)'}", highlight=False)
+    extra = sorted(cfg.excluded_dirs - FIXED_EXCLUDED_DIRS)
+    rows = [
+        ("Pastas ignoradas (extra)", ", ".join(extra) or "—"),
+        ("Tamanho máximo lido", _human_size(cfg.max_file_size)),
+        ("Profundidade do painel", str(cfg.root_max_depth)),
+        ("Ollama", f"{cfg.ollama_url} · {cfg.ollama_model}"),
+    ]
+    for label, value in rows:
+        console.print(f"  {label}: [bold]{escape(value)}[/]", highlight=False)
 
 
 def _human_size(size: int) -> str:
