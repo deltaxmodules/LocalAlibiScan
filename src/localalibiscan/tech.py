@@ -110,7 +110,7 @@ TECHS: tuple[Tech, ...] = (
         config_files=("next.config.js", "next.config.mjs", "next.config.ts"),
         doc_names=("Next.js", "NextJS"),
     ),
-    Tech("vue", "Vue", "framework", npm=("vue",), imports=("vue",), doc_names=("Vue", "Vue.js")),
+    Tech("vue", "Vue", "framework", npm=("vue",), imports=("vue",), doc_names=("Vue.js", "VueJS", "Vue 3", "Vue 2")),
     Tech("nuxt", "Nuxt", "framework", npm=("nuxt",), imports=("nuxt", "#app"), config_files=("nuxt.config.ts", "nuxt.config.js")),
     Tech("svelte", "Svelte", "framework", npm=("svelte", "@sveltejs/kit"), imports=("svelte", "@sveltejs/kit"), config_files=("svelte.config.js",)),
     Tech("angular", "Angular", "framework", npm=("@angular/core",), imports=("@angular/core",), config_files=("angular.json",)),
@@ -131,7 +131,7 @@ TECHS: tuple[Tech, ...] = (
     Tech("streamlit", "Streamlit", "framework", pypi=("streamlit",), imports=("streamlit",)),
     Tech("gradio", "Gradio", "framework", pypi=("gradio",), imports=("gradio",)),
     Tech("typer", "Typer", "framework", pypi=("typer",), imports=("typer",)),
-    Tech("click", "Click", "framework", pypi=("click",), imports=("click",)),
+    Tech("click", "Click", "framework", pypi=("click",), imports=("click",), doc_names=("Python Click",)),
     Tech("langchain", "LangChain", "framework", npm=("langchain", "@langchain/*"), pypi=("langchain", "langchain-*"), imports=("langchain", "langchain_*", "@langchain/*")),
     # ------------------------------------------------------------ serviços externos
     Tech(
@@ -188,7 +188,7 @@ TECHS: tuple[Tech, ...] = (
     Tech("twilio", "Twilio", "service", npm=("twilio",), pypi=("twilio",), imports=("twilio",), env=("TWILIO_*",), strings=("api.twilio.com",)),
     Tech("sendgrid", "SendGrid", "service", npm=("@sendgrid/mail",), pypi=("sendgrid",), imports=("@sendgrid/mail", "sendgrid"), env=("SENDGRID_API_KEY",)),
     Tech("resend", "Resend", "service", npm=("resend",), pypi=("resend",), imports=("resend",), env=("RESEND_API_KEY",), strings=("api.resend.com",)),
-    Tech("slack", "Slack API", "service", npm=("@slack/web-api", "@slack/bolt"), pypi=("slack-sdk", "slack-bolt"), imports=("@slack/web-api", "@slack/bolt", "slack_sdk", "slack_bolt"), env=("SLACK_*",), strings=("hooks.slack.com", "slack.com/api"), doc_names=("Slack",)),
+    Tech("slack", "Slack API", "service", npm=("@slack/web-api", "@slack/bolt"), pypi=("slack-sdk", "slack-bolt"), imports=("@slack/web-api", "@slack/bolt", "slack_sdk", "slack_bolt"), env=("SLACK_*",), strings=("hooks.slack.com", "slack.com/api"), doc_names=("Slack API", "Slack bot", "Slack webhook", "Slack app")),
     Tech("huggingface", "Hugging Face", "service", npm=("@huggingface/inference",), pypi=("huggingface-hub", "transformers"), imports=("@huggingface/inference", "huggingface_hub", "transformers"), env=("HF_TOKEN", "HUGGINGFACE_*"), strings=("huggingface.co",)),
 )
 
@@ -216,3 +216,36 @@ def matches_any(patterns: tuple[str, ...], value: str) -> bool:
 
 def techs_in(category: str) -> list[Tech]:
     return [t for t in TECHS if t.category == category or category in t.also]
+
+
+# Grupos de tecnologias mutuamente exclusivas: se a documentação diz X e o
+# código confirma Y do mesmo grupo (e X não tem qualquer sinal), há contradição.
+# Tecnologias fora destes grupos (serviços, ORMs, Redis...) costumam coexistir.
+EXCLUSIVE_GROUPS: dict[str, str] = {
+    "sqlite": "db",
+    "postgresql": "db",
+    "mysql": "db",
+    "mongodb": "db",
+    "dynamodb": "db",
+    "fastapi": "py_web",
+    "flask": "py_web",
+    "django": "py_web",
+    "express": "js_server",
+    "fastify": "js_server",
+    "koa": "js_server",
+    "hono": "js_server",
+    "react": "ui",
+    "vue": "ui",
+    "svelte": "ui",
+    "angular": "ui",
+}
+
+# Nomes que também são palavras comuns: na documentação só contam com a
+# capitalização exata (ex.: "Express", não "express delivery").
+CASE_SENSITIVE_DOC_NAMES: frozenset[str] = frozenset(
+    {
+        "Express", "Click", "React", "Vue", "Koa", "Hono", "Typer", "Gradio", "Angular", "Svelte",
+        "Vite", "Electron", "Slack", "S3", "Mongo", "Resend", "Sentry", "Flask", "Streamlit", "Nuxt",
+        "Gemini", "Drizzle", "Prisma",
+    }
+)

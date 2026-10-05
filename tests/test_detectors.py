@@ -26,6 +26,7 @@ def test_registry_order() -> None:
         "frameworks",
         "external_services",
         "routes",
+        "docs_vs_code",
         "important_files",
     ]
 

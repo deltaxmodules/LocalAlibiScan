@@ -38,6 +38,7 @@ SECTIONS: list[tuple[str, str]] = [
     ("framework", "Frameworks"),
     ("service", "Serviços externos"),
     ("route", "Rotas"),
+    ("docs_vs_code", "Documentação vs código"),
     ("important_files", "Ficheiros importantes"),
     ("docs", "Documentação"),
     ("manifest", "Manifestos"),

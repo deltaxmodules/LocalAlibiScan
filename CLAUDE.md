@@ -25,6 +25,7 @@ Ferramenta local que diz o que cada projeto é, como está e o que mudou, e prov
 - Painel: `dashboard.py` usa `discover_projects` de `project_kind` (sem lógica própria de descoberta) e `scan(..., use_cache=True)`. A cache compara a impressão digital (caminho+mtime+tamanho de cada ficheiro, HEAD do git, versão) guardada em `project.json`. HTML em `html_report.py`: autónomo, sem recursos externos, todo o conteúdo passa por `html.escape`.
 - Git: só através de `git.py` (lista branca `rev-parse`/`log`/`status`, `GIT_OPTIONAL_LOCKS=0`).
 - Qualquer pasta com `pyvenv.cfg` (virtualenv com outro nome) ou chamada `site-packages` é ignorada.
+- Documentação vs código: `doc_mentions.py` (extrator) + `detectors/docs_vs_code.py`. Limitações em `docs/limitacoes.md` — atualizar quando se muda uma heurística.
 - SQLite: `storage.py`; os caminhos passam por `ProjectFS.writable_path`.
 - Todo o claim que não é `unknown` tem pelo menos uma `Evidence` (há teste para isso).
 - Git só via `subprocess` com comandos de leitura (`log`, `status`, `rev-parse`).

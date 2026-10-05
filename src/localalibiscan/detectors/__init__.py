@@ -19,6 +19,7 @@ from . import structure  # noqa: E402,F401
 from . import docs  # noqa: E402,F401
 from . import technologies  # noqa: E402,F401  (database, orm, frameworks, external_services)
 from . import routes  # noqa: E402,F401
+from . import docs_vs_code  # noqa: E402,F401
 from . import important_files  # noqa: E402,F401  (lê os Claims anteriores: corre no fim)
 
 
