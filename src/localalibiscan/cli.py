@@ -27,6 +27,7 @@ from .history import diff_snapshots, list_snapshots
 from .llm import OllamaClient
 from .project import Project
 from .render import (
+    section_keys,
     render_ask,
     render_dashboard,
     render_diff,
@@ -128,6 +129,10 @@ def scan(
     evidence: Annotated[
         bool, typer.Option("--evidence", help="Mostra todas as evidências de cada afirmação.")
     ] = False,
+    only: Annotated[
+        str | None,
+        typer.Option("--only", help="Só estas secções, ex.: database,framework,route,docs_vs_code."),
+    ] = None,
 ) -> None:
     """Analisa a pasta e mostra o perfil, com estado e evidência por afirmação."""
     result = run_scan(folder, load_config(), force=force)
@@ -135,7 +140,7 @@ def scan(
         render_kind(console, result.kind)
         console.print("\n[dim]Análise não feita. Use --force para analisar mesmo assim.[/]")
         raise typer.Exit(code=2)
-    render_profile(console, result.profile, all_evidence=evidence)
+    render_profile(console, result.profile, all_evidence=evidence, only=section_keys(only))
     if result.output:
         console.print(f"[dim]Perfil guardado em {result.output}[/]", highlight=False)
 
@@ -292,6 +297,9 @@ def ask(
     model: Annotated[
         str | None, typer.Option("--model", help="Modelo do Ollama (por omissão o da configuração).")
     ] = None,
+    brief: Annotated[
+        bool, typer.Option("--brief", help="Evidências numa linha cada, sem os excertos de código.")
+    ] = False,
 ) -> None:
     """Pergunta livre: procura evidências primeiro; a IA (opcional) só responde com elas."""
     config = load_config()
@@ -305,7 +313,7 @@ def ask(
     project = Project(result.kind.path, config)
     with console.status("A procurar evidências…" + (" e a redigir…" if client else "")):
         answer = ask_project(project, result.profile, question, client)
-    render_ask(console, answer, note)
+    render_ask(console, answer, note, brief=brief)
     if not answer.found:
         raise typer.Exit(code=1)
 

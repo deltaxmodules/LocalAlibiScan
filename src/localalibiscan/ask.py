@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import PurePosixPath
 
 from .code import code_index
+from .knowledge import in_non_product_dir
 from .drafting import Validated, structured_to_text, validate
 from .llm import LLMUnavailable, TextModel
 from .models import Claim, ProjectProfile
@@ -140,8 +141,10 @@ def search(project: Project, profile: ProjectProfile, question: str) -> tuple[li
     def add(file: str, line: int | None, reason: str, score: int, matched: set[str]) -> None:
         if file in project.paths:
             # Termos escritos na pergunta valem mais do que sinónimos.
-            bonus = 3 if matched & direct else 0
-            hits.append(Hit(file, line or 1, reason, score + bonus))
+            bonus = 2 if matched & direct else 0
+            # Testes, exemplos e templates mostram-se, mas depois do código do produto.
+            penalty = 3 if in_non_product_dir(file) else 0
+            hits.append(Hit(file, line or 1, reason, score + bonus - penalty))
 
     def matched(text: str) -> set[str]:
         return {t for t in terms if _matches(t, text)}
@@ -224,9 +227,11 @@ def suggestions(profile: ProjectProfile, project: Project) -> list[str]:
 
 ASK_SYSTEM = (
     "Respondes a perguntas sobre um projeto de software usando APENAS os excertos de código fornecidos. "
-    "Nunca uses conhecimento externo nem inventes ficheiros, funções ou serviços. Escreves em português de "
-    "Portugal. Cada frase cita, em «ids», as localizações ficheiro:linha dos excertos que a suportam. "
-    "Se os excertos não chegarem para responder, diz isso numa frase citando o excerto mais próximo."
+    "Nunca uses conhecimento externo nem inventes ficheiros, funções ou serviços. Respondes na mesma "
+    "língua em que a pergunta foi escrita. Cada frase diz o que acontece naquele sítio (que função, que "
+    "rota, o que faz) e cita, em «ids», as localizações ficheiro:linha dos excertos que a suportam. "
+    "Não repitas a mesma frase para sítios diferentes. Se os excertos não chegarem para responder, "
+    "diz isso numa frase citando o excerto mais próximo."
 )
 
 

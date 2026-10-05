@@ -110,3 +110,11 @@ def test_scan_is_read_only(fixture_copy, config, name: str) -> None:
     before = tree_hash(root)
     scan(root, config, force=True)
     assert tree_hash(root) == before
+
+
+def test_scan_only_sections(fixture_copy) -> None:
+    root = fixture_copy("node_sqlite_lying_readme")
+    out = invoke("scan", str(root), "--only", "db,docs-vs-code", "--evidence").output
+    assert "Base de dados" in out and "Documentação vs código" in out
+    assert "src/db/database.ts:3" in out
+    assert "Dependências" not in out and "Linguagens" not in out

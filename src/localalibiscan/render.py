@@ -134,7 +134,24 @@ def render_kind(console: Console, kind: KindResult, *, show_evidence: bool = Tru
         console.print(f"\n  Sugestão: [bold]las scan {_q(kind.project_root)}[/]", highlight=False)
 
 
-def render_profile(console: Console, profile: ProjectProfile, *, all_evidence: bool = False) -> None:
+SECTION_ALIASES = {
+    "db": "database", "databases": "database", "frameworks": "framework", "services": "service",
+    "routes": "route", "docs-vs-code": "docs_vs_code", "files": "important_files",
+    "dependencies": "dependency", "scripts": "script", "languages": "language", "entry": "entry_point",
+}
+
+
+def section_keys(only: str | None) -> set[str] | None:
+    """"database,docs_vs_code" -> categorias; None mostra tudo."""
+    if not only:
+        return None
+    keys = {SECTION_ALIASES.get(k.strip().lower(), k.strip().lower()) for k in only.split(",") if k.strip()}
+    return keys or None
+
+
+def render_profile(
+    console: Console, profile: ProjectProfile, *, all_evidence: bool = False, only: set[str] | None = None
+) -> None:
     if profile.verdict == "probable_project":
         console.print(
             "[bold yellow]≈ Provável projeto:[/] [yellow]sem .git nem manifesto. "
@@ -154,7 +171,7 @@ def render_profile(console: Console, profile: ProjectProfile, *, all_evidence: b
     order = SECTIONS + [(cat, cat.replace("_", " ").capitalize()) for cat in by_cat if cat not in known]
     for cat, title in order:
         claims = by_cat.get(cat)
-        if not claims:
+        if not claims or (only is not None and cat not in only):
             continue
         console.print(f"\n[bold underline]{title}[/]")
         for claim in claims:
@@ -274,7 +291,7 @@ def render_explanation(console: Console, exp: Explanation) -> None:
             )
 
 
-def render_ask(console: Console, result: AskResult, llm_note: str | None) -> None:
+def render_ask(console: Console, result: AskResult, llm_note: str | None, *, brief: bool = False) -> None:
     console.print(f"[bold]Pergunta:[/] {escape(result.question)}", highlight=False)
     if not result.found:
         console.print("\n[yellow]Não encontrei evidências sobre isto.[/] [dim](a LLM não foi chamada)[/]")
@@ -295,5 +312,7 @@ def render_ask(console: Console, result: AskResult, llm_note: str | None) -> Non
     console.print("\n[bold underline]Evidências encontradas[/]")
     for e in result.excerpts:
         console.print(f"  [cyan]{escape(e.file)}:{e.start}-{e.end}[/]  [dim]{escape('; '.join(e.reasons))}[/]", highlight=False)
+        if brief:
+            continue
         for n, text in zip(range(e.start, e.end + 1), e.lines):
             console.print(f"    [dim]{n:>4}[/] {escape(text.rstrip()[:150])}", highlight=False)
