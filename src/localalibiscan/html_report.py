@@ -22,7 +22,9 @@ CSS = """
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 main{max-width:1200px;margin:0 auto;padding:24px 16px 64px}
-h1{font-size:22px;margin:0 0 4px}
+h1{font-size:22px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.logo{width:32px;height:32px}.logo.dark{display:none}
+@media (prefers-color-scheme:dark){.logo.light{display:none}.logo.dark{display:inline}}
 .sub{color:var(--muted);margin:0 0 20px;word-break:break-all}
 .controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
 .controls input,.controls select{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg)}
@@ -62,6 +64,15 @@ function order(){const k=sort.value;items.sort((a,b)=>k==='name'?a.dataset.name.
  :(b.dataset.time||'').localeCompare(a.dataset.time||''));items.forEach(el=>list.appendChild(el));}
 q.addEventListener('input',apply);lang.addEventListener('change',apply);sort.addEventListener('change',()=>{order();apply();});
 """
+
+
+def _icon_data_uri(name: str) -> str:
+    """Ícone embutido em base64: o relatório continua autónomo (sem rede)."""
+    import base64
+    from importlib.resources import files
+
+    data = files("localalibiscan.assets").joinpath(name).read_bytes()
+    return "data:image/png;base64," + base64.b64encode(data).decode()
 
 
 def display_path(path: object) -> str:
@@ -138,6 +149,7 @@ def render_html(dashboard: Dashboard, generated_at: datetime | None = None) -> s
     langs = sorted({lang for row in dashboard.rows for lang in row.languages})
     options = "".join(f'<option value="{_e(l)}">{_e(l)}</option>' for l in langs)
     projects = "\n".join(_project_html(r) for r in dashboard.rows)
+    icon, icon_dark = _icon_data_uri("icon-64.png"), _icon_data_uri("icon-dark-64.png")
     meta = json.dumps({"root": display_path(dashboard.root), "projects": len(dashboard.rows), "version": __version__})
     return f"""<!doctype html>
 <html lang="pt">
@@ -145,11 +157,13 @@ def render_html(dashboard: Dashboard, generated_at: datetime | None = None) -> s
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LocalAlibiScan — painel</title>
+<link rel="icon" type="image/png" href="{icon}" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" href="{icon_dark}" media="(prefers-color-scheme: dark)">
 <style>{CSS}</style>
 </head>
 <body>
 <main>
-<h1>LocalAlibiScan</h1>
+<h1><img class="logo light" src="{icon}" alt=""><img class="logo dark" src="{icon_dark}" alt="">LocalAlibiScan</h1>
 <p class="sub">{len(dashboard.rows)} projetos em {_e(display_path(dashboard.root))} · gerado em {_e(generated_at.strftime('%Y-%m-%d %H:%M'))}</p>
 <div class="controls">
 <input id="q" type="search" placeholder="Procurar projeto, stack, serviço…" aria-label="Procurar">

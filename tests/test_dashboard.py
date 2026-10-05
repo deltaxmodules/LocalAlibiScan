@@ -106,7 +106,7 @@ def test_html_is_self_contained(fixture_copy, config) -> None:
     board = build_dashboard(fixture_copy("projects_root"), config)
     page = render_html(board)
     assert page.startswith("<!doctype html>")
-    assert not re.search(r"<(script|link|img|iframe)[^>]+(src|href)=", page)
+    assert not re.search(r"<(script|link|img|iframe)[^>]+(src|href)=\"(?!data:)", page)
     assert "@import" not in page and "url(" not in page
     for name in ("alpha_api", "beta_web", "gamma_cli", "delta_tool"):
         assert name in page

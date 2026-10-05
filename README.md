@@ -1,12 +1,21 @@
-# LocalAlibiScan
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="site/public/brand/logo-dark.png">
+    <img src="site/public/brand/logo.png" alt="LocalAlibiScan — every claim has an alibi" width="560">
+  </picture>
+</p>
 
-> **Every claim has an alibi.**
+<p align="center">
+  <a href="https://deltaxmodules.github.io/LocalAlibiScan/"><b>Manual</b></a> ·
+  <a href="https://deltaxmodules.github.io/LocalAlibiScan/#see-it-in-90-seconds">Demo video</a> ·
+  <a href="https://deltaxmodules.github.io/LocalAlibiScan/example/">Example report</a>
+</p>
 
 LocalAlibiScan is a local, read-only tool that tells you what every project on
 your disk is, what state it is in and what changed — and **proves every
 statement with the file and line it came from**.
 
-![las dashboard: every project in a folder at a glance](docs/img/dashboard.svg)
+![las dashboard and a README that lies, in a real terminal](site/public/img/localalibiscan-demo.gif)
 
 ## Why
 
@@ -52,7 +61,7 @@ las config --init               # create ~/.localalibi/config.toml
 [example report built from well-known open-source projects](https://deltaxmodules.github.io/LocalAlibiScan/example/)
 (Express, Flask, httpx, Vite, the FastAPI full-stack template, …).
 
-> The terminal output and the HTML report are currently in **Portuguese**.
+> The terminal output and the HTML report are currently in **Portuguese**; the [manual](https://deltaxmodules.github.io/LocalAlibiScan/) explains every screen in English.
 
 ## Claims
 
@@ -132,6 +141,9 @@ timeout = 180
 Environment variables `LOCALALIBI_OLLAMA_MODEL` and `LOCALALIBI_OLLAMA_URL`
 override the file.
 
+The full manual is at **https://deltaxmodules.github.io/LocalAlibiScan/**, with a 90-second
+[demo video](https://deltaxmodules.github.io/LocalAlibiScan/#see-it-in-90-seconds).
+
 ## Development
 
 ```bash
@@ -141,7 +153,9 @@ uv venv -p 3.12 .venv && uv pip install -p .venv -e '.[dev]'
 
 The tool was built phase by phase from [`SPEC.md`](SPEC.md) (in Portuguese);
 contributor rules live in [`CLAUDE.md`](CLAUDE.md). Test projects are in
-`tests/fixtures/`.
+`tests/fixtures/`. The manual is in `site/` (VitePress; `cd site && npx vitepress dev .`), its
+reference pages are generated with `python scripts/gen_reference.py`, and the demo video and GIF
+are recorded with `scripts/demo-video.sh` ([how](docs/video/PLANO.md)).
 
 ## License
 

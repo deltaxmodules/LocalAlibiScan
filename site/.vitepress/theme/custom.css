@@ -1,0 +1,28 @@
+/* Cores do logótipo: verde "Scan" e azul-marinho do texto. */
+:root {
+  --vp-c-brand-1: #0f9f6e;
+  --vp-c-brand-2: #10b981;
+  --vp-c-brand-3: #0b7a55;
+  --vp-c-brand-soft: rgba(16, 185, 129, 0.14);
+  --vp-home-hero-name-color: #111a2e;
+}
+.dark {
+  --vp-c-brand-1: #34d399;
+  --vp-c-brand-2: #10b981;
+  --vp-c-brand-3: #6ee7b7;
+  --vp-home-hero-name-color: #eef2f7;
+}
+.VPNavBarTitle .logo {
+  height: 30px;
+}
+.VPHero .image-bg {
+  display: none;
+}
+.VPHero .image-src {
+  max-width: 300px;
+}
+/* O logótipo tem versão para fundo claro e escuro. */
+.only-dark { display: none; }
+.dark .only-light { display: none; }
+.dark .only-dark { display: inline; }
+.status-table td:nth-child(2) { font-size: 1.2em; text-align: center; }
