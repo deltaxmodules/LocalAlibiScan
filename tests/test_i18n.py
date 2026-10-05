@@ -214,6 +214,8 @@ def test_explain_questions_translated(fixture_copy) -> None:
 
 def test_help_in_english_and_config_template(tmp_path: Path, monkeypatch) -> None:
     out = runner.invoke(app, ["--help"], env={"COLUMNS": "200"}).output
+    # No GitHub Actions o Rich força cores na ajuda do Typer: tirar os códigos ANSI.
+    out = re.sub(r"\x1b\[[0-9;]*m", "", out)
     assert "--lang-ui" in out and "List the files that would be analysed" in out
     assert 'language = "en"' in i18n.t("config.template")
     assert 'language = "pt"' in i18n.t("config.template", lang="pt")
