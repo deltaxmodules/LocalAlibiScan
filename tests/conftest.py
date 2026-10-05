@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import hashlib
 import shutil
+from dataclasses import replace
 import subprocess
 from pathlib import Path
 
 import pytest
+
+from localalibiscan.config import Config, load_config
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -24,6 +27,7 @@ ALL_FIXTURES = [
 # os projetos que precisam de git recebem `git init` numa cópia temporária.
 GIT_PROJECTS = {
     "projects_root": ["alpha_api", "beta_web", "gamma_cli"],  # delta_tool fica sem git
+    "empty_project": ["."],  # "só um README", mas num repositório: é um projeto
 }
 
 
@@ -46,12 +50,18 @@ def _git_init(path: Path) -> None:
 
 
 @pytest.fixture
+def config(tmp_path: Path) -> Config:
+    """Config isolada: a pasta pessoal e a de configuração ficam em tmp."""
+    return replace(load_config(), home_dir=tmp_path, user_config_dir=tmp_path / "user_cfg")
+
+
+@pytest.fixture
 def fixture_copy(tmp_path: Path):
     """Copia uma fixture para uma pasta temporária (com git onde for preciso)."""
 
     def _copy(name: str) -> Path:
-        dest = tmp_path / name
-        shutil.copytree(FIXTURES / name, dest)
+        dest = tmp_path / "work" / name
+        shutil.copytree(FIXTURES / name, dest, ignore=shutil.ignore_patterns(".localalibi"))
         for sub in GIT_PROJECTS.get(name, []):
             _git_init(dest / sub)
         return dest

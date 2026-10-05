@@ -16,7 +16,10 @@ Ferramenta local que diz o que cada projeto é, como está e o que mudou, e prov
 
 ## Como o código cumpre as regras
 
-- `src/localalibiscan/fs.py` é a **única** camada de acesso a ficheiros do projeto analisado. Nenhum outro módulo usa `open()`, `Path.write_*`, `os.remove`, `shutil` sobre o projeto. Escrever fora das pastas permitidas lança `ReadOnlyViolation`.
+- `src/localalibiscan/fs.py` é a **única** camada que escreve ou lê conteúdo de ficheiros do projeto analisado (os detetores leem via `Project.text()`/`lines()`). Nenhum outro módulo usa `open()`, `Path.write_*`, `os.remove`, `shutil` sobre o projeto. Escrever fora das pastas permitidas lança `ReadOnlyViolation`. (Exceção: ler os nossos próprios ficheiros em `.localalibi/`.)
+- Detetores: `src/localalibiscan/detectors/`. Cada um é uma classe com `detect(project) -> list[Claim]`, decorada com `@register` e importada em `detectors/__init__.py` (a ordem de importação é a ordem de execução). Dados partilhados entre detetores vivem em funções com cache em `project.cache` (ex.: `parse_manifests`), nunca em chamadas diretas a outro detetor.
+- `detectors/project_kind.py` decide o veredito da pasta e corre antes de tudo (fora do REGISTRY). O painel (Fase 3) reutiliza `classify`/`find_subprojects`.
+- Todo o claim que não é `unknown` tem pelo menos uma `Evidence` (há teste para isso).
 - Git só via `subprocess` com comandos de leitura (`log`, `status`, `rev-parse`).
 - Constantes e limiares vivem em `src/localalibiscan/config.py`.
 
@@ -29,5 +32,8 @@ uv venv -p 3.12 .venv && uv pip install -p .venv -e '.[dev]'
 ```
 
 - Fixtures em `tests/fixtures/` (ver SPEC.md secção 6). Uma pasta `.git` não pode ser guardada dentro deste repositório: os testes que precisam de git usam a fixture `fixture_copy` de `tests/conftest.py`, que copia para uma pasta temporária e faz `git init` onde está definido em `GIT_PROJECTS`.
+- `tests/fixtures/.localalibi-ceiling` trava a procura de raiz para cima: sem ele, as fixtures seriam vistas como subpastas deste repositório.
+- `empty_project` só tem um README; à mão dá `not_a_project`, nos testes recebe `git init` e é um `project` que mostra `?`.
+- Usar a fixture `config` (pasta pessoal isolada em tmp) nos testes que chamam `classify`/`scan`.
 - Testes que analisam fixtures devem confirmar só leitura com `tree_hash` antes/depois.
 - Depois de cada fase: rever, commit com a etiqueta `fase-N`.

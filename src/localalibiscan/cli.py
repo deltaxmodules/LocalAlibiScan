@@ -12,14 +12,17 @@ from rich.table import Table
 
 from . import __version__
 from .config import load_config
+from .detectors.project_kind import classify
 from .fs import ProjectFS
+from .render import render_kind, render_profile
+from .scan import scan as run_scan
 
 app = typer.Typer(
     help="LocalAlibiScan — every claim has an alibi.",
     no_args_is_help=True,
     add_completion=False,
 )
-console = Console()
+console = Console(soft_wrap=True)
 
 SKIP_LABELS = {
     "too_large": "grande, não lido",
@@ -84,6 +87,38 @@ def files(
         f"{total} ficheiros, {_human_size(total_bytes)}"
         + (f", {skipped} registados mas não lidos" if skipped else "")
     )
+
+
+FolderArg = Annotated[
+    Path, typer.Argument(exists=True, file_okay=False, help="Pasta a analisar.")
+]
+
+
+@app.command()
+def check(folder: FolderArg = Path(".")) -> None:
+    """Mostra só o veredito da pasta e as suas evidências, sem análise."""
+    render_kind(console, classify(folder, load_config()))
+
+
+@app.command()
+def scan(
+    folder: FolderArg = Path("."),
+    force: Annotated[
+        bool, typer.Option("--force", help="Analisa mesmo que a pasta não pareça um projeto.")
+    ] = False,
+    evidence: Annotated[
+        bool, typer.Option("--evidence", help="Mostra todas as evidências de cada afirmação.")
+    ] = False,
+) -> None:
+    """Analisa a pasta e mostra o perfil, com estado e evidência por afirmação."""
+    result = run_scan(folder, load_config(), force=force)
+    if result.profile is None:
+        render_kind(console, result.kind)
+        console.print("\n[dim]Análise não feita. Use --force para analisar mesmo assim.[/]")
+        raise typer.Exit(code=2)
+    render_profile(console, result.profile, all_evidence=evidence)
+    if result.output:
+        console.print(f"[dim]Perfil guardado em {result.output}[/]", highlight=False)
 
 
 def _human_size(size: int) -> str:
