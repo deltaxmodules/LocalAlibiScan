@@ -70,6 +70,18 @@ class Config:
     # Profundidade máxima (em pastas) dos manifestos lidos.
     manifest_max_depth: int = 2
 
+    # --- Fase 6: redação com LLM local (opcional)
+    ollama_url: str = "http://localhost:11434"
+    ollama_model: str = "qwen2.5-coder:7b"
+    ollama_timeout: float = 180.0
+
 
 def load_config() -> Config:
-    return Config()
+    import os
+
+    overrides = {}
+    if os.environ.get("LOCALALIBI_OLLAMA_MODEL"):
+        overrides["ollama_model"] = os.environ["LOCALALIBI_OLLAMA_MODEL"]
+    if os.environ.get("LOCALALIBI_OLLAMA_URL"):
+        overrides["ollama_url"] = os.environ["LOCALALIBI_OLLAMA_URL"]
+    return Config(**overrides)

@@ -13,6 +13,7 @@ from .models import Claim, Evidence, ProjectProfile
 
 if TYPE_CHECKING:
     from .dashboard import Dashboard
+    from .drafting import Explanation
     from .history import Diff
 
 STATUS_STYLE = {
@@ -237,3 +238,36 @@ def render_diff(console: Console, diff: Diff) -> None:
         for ch in items:
             loc = f"  [dim]←[/] [cyan]{escape(ch.location)}[/]" if ch.location else ""
             console.print(f"  [{DIFF_STYLE[ch.sign]}]{ch.sign}[/] {escape(ch.text)}{loc}", highlight=False)
+
+
+def render_explanation(console: Console, exp: Explanation) -> None:
+    console.print(f"[bold]{escape(exp.profile.root)}[/]", highlight=False)
+    if exp.model and not exp.llm_error:
+        console.print(f"[yellow]≈ Redação por IA ligada[/] [dim](modelo {escape(exp.model)}; só frases com citações válidas)[/]")
+    else:
+        reason = exp.llm_error or "Ollama não disponível em localhost"
+        console.print(f"[dim]Redação por IA desligada: {escape(reason)}. Só factos.[/]")
+    for a in exp.answers:
+        console.print(f"\n[bold underline]{escape(a.question.text)}[/]")
+        if a.unknown:
+            console.print("  [dim]? Sem factos para responder.[/]")
+            continue
+        if a.drafted:
+            for sentence in a.drafted.sentences:
+                console.print(
+                    f"  [yellow]≈[/] {escape(sentence.text)} [dim]\\[{escape(', '.join(sentence.ids))}][/]",
+                    highlight=False,
+                )
+        for line in a.lines:
+            console.print(f"  [dim]·[/] {escape(line)}", highlight=False)
+        for claim in a.facts:
+            if claim.id == "files.important" and isinstance(claim.value, list):
+                for i, item in enumerate(claim.value, start=1):
+                    console.print(f"  {i:>2}. [cyan]{escape(item['path'])}[/]  [dim]{escape(item['reason'])}[/]", highlight=False)
+                continue
+            style = STATUS_STYLE[claim.status]
+            loc = f"  [dim]←[/] [cyan]{escape(claim.evidence[0].location())}[/]" if claim.evidence else ""
+            console.print(
+                f"  [{style}]{claim.symbol}[/] {escape(claim.label)}: {escape(format_value(claim))}{loc}",
+                highlight=False,
+            )

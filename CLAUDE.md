@@ -27,6 +27,7 @@ Ferramenta local que diz o que cada projeto é, como está e o que mudou, e prov
 - Qualquer pasta com `pyvenv.cfg` (virtualenv com outro nome) ou chamada `site-packages` é ignorada.
 - Documentação vs código: `doc_mentions.py` (extrator) + `detectors/docs_vs_code.py`. Limitações em `docs/limitacoes.md` — atualizar quando se muda uma heurística.
 - Histórico: `history.py` (`history.db`: snapshot por análise real com Claims + hash de ficheiros; `diff_snapshots` traduz para "+/-/~/⚠"). Uma análise vinda da cache não cria snapshot.
+- LLM (opcional): `llm.py` (cliente Ollama, só aceita localhost) e `drafting.py`. A LLM recebe só Claims (id, rótulo, valor, estado, nota) — nunca código. Pede-se JSON `{"text", "ids"}` (modelos pequenos não citam bem em texto livre) e tudo passa pelo `validate`, que remove frases sem citação ou com ids inexistentes. Exemplos no prompt só com marcadores (um exemplo real é copiado). Testes usam modelos falsos; nenhum teste depende do Ollama.
 - SQLite: `storage.py`; os caminhos passam por `ProjectFS.writable_path`.
 - Todo o claim que não é `unknown` tem pelo menos uma `Evidence` (há teste para isso).
 - Git só via `subprocess` com comandos de leitura (`log`, `status`, `rev-parse`).

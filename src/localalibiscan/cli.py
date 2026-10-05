@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shlex
+from datetime import datetime
 from dataclasses import replace
 from pathlib import Path
 from typing import Annotated
@@ -17,8 +18,11 @@ from .detectors.project_kind import classify
 from .fs import ProjectFS
 from .dashboard import build_dashboard
 from .html_report import render_html
+from .drafting import Overview, generate_overview, overview_markdown
+from .drafting import explain as explain_project
 from .history import diff_snapshots, list_snapshots
-from .render import render_dashboard, render_diff, render_kind, render_profile
+from .llm import OllamaClient
+from .render import render_dashboard, render_diff, render_explanation, render_kind, render_profile
 from .scan import scan as run_scan
 
 app = typer.Typer(
@@ -223,6 +227,56 @@ def history(folder: FolderArg = Path(".")) -> None:
         )
         prev = snap
     console.print(table)
+
+
+@app.command()
+def explain(
+    folder: FolderArg = Path("."),
+    no_llm: Annotated[
+        bool, typer.Option("--no-llm", help="Não usa o Ollama: mostra só factos.")
+    ] = False,
+    model: Annotated[
+        str | None, typer.Option("--model", help="Modelo do Ollama (por omissão o da configuração).")
+    ] = None,
+) -> None:
+    """Explique-me este projeto: perguntas fixas respondidas com factos (e IA opcional)."""
+    config = load_config()
+    result = run_scan(folder, config, use_cache=True)
+    if result.profile is None:
+        render_kind(console, result.kind)
+        console.print("\n[dim]Não é um projeto: nada para explicar. Use «las scan --force» primeiro.[/]")
+        raise typer.Exit(code=2)
+
+    client: OllamaClient | None = None
+    llm_off_reason = None
+    if no_llm:
+        llm_off_reason = "desligada com --no-llm"
+    else:
+        client = OllamaClient(config.ollama_url, model or config.ollama_model, config.ollama_timeout)
+        if not client.available():
+            llm_off_reason = f"Ollama ou modelo {client.model} não disponível em {config.ollama_url}"
+            client = None
+
+    pfs = ProjectFS(result.kind.path, config)
+
+    def read(rel: str) -> str | None:
+        try:
+            return pfs.read_text(rel)
+        except OSError:
+            return None
+
+    with console.status("A redigir com o modelo local…" if client else "A preparar…"):
+        exp = explain_project(result.profile, client, root=pfs.root, read=read)
+        overview = generate_overview(result.profile, client) if client else Overview(None, None, llm_off_reason)
+    if llm_off_reason and not exp.llm_error:
+        exp.llm_error = llm_off_reason
+    render_explanation(console, exp)
+
+    out = pfs.write_text(
+        pfs.output_dir / "overview.md",
+        overview_markdown(exp, overview, datetime.now().strftime("%Y-%m-%d %H:%M")),
+    )
+    console.print(f"\n[dim]Resumo guardado em {out}[/]", highlight=False)
 
 
 def _human_size(size: int) -> str:
