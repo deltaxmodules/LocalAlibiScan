@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shlex
 from dataclasses import replace
 from pathlib import Path
 from typing import Annotated
@@ -14,7 +15,9 @@ from . import __version__
 from .config import load_config
 from .detectors.project_kind import classify
 from .fs import ProjectFS
-from .render import render_kind, render_profile
+from .dashboard import build_dashboard
+from .html_report import render_html
+from .render import render_dashboard, render_kind, render_profile
 from .scan import scan as run_scan
 
 app = typer.Typer(
@@ -119,6 +122,59 @@ def scan(
     render_profile(console, result.profile, all_evidence=evidence)
     if result.output:
         console.print(f"[dim]Perfil guardado em {result.output}[/]", highlight=False)
+
+
+@app.command()
+def dashboard(
+    folder: FolderArg = Path("."),
+    html: Annotated[
+        bool, typer.Option("--html", help="Gera ~/.localalibi/dashboard.html (autónomo, sem rede).")
+    ] = False,
+    lang: Annotated[
+        str | None, typer.Option("--lang", help="Mostra só projetos com esta linguagem.")
+    ] = None,
+    depth: Annotated[
+        int | None, typer.Option("--depth", help="Níveis a descer à procura de projetos.")
+    ] = None,
+    no_cache: Annotated[
+        bool, typer.Option("--no-cache", help="Reanalisa todos os projetos.")
+    ] = False,
+) -> None:
+    """Painel com todos os projetos de uma pasta raiz."""
+    config = load_config()
+    kind = classify(folder, config)
+    if kind.analyzable:
+        # A própria pasta é um projeto: mostra o perfil dele.
+        result = run_scan(folder, config, use_cache=not no_cache)
+        assert result.profile is not None
+        render_profile(console, result.profile)
+        console.print(
+            f"\n[dim]Esta pasta é um projeto, não uma raiz. Para o perfil completo: "
+            f"[bold]las scan {shlex.quote(str(kind.path))}[/][/]",
+            highlight=False,
+        )
+        return
+
+    with console.status("A procurar projetos…") as status:
+        board = build_dashboard(
+            folder,
+            config,
+            depth=depth,
+            language=lang,
+            use_cache=not no_cache,
+            on_project=lambda p: status.update(f"A analisar {p.name}…"),
+        )
+    if not board.rows:
+        render_kind(console, kind)
+        console.print("\n[dim]Nenhum projeto encontrado nesta pasta.[/]")
+        raise typer.Exit(code=2)
+
+    render_dashboard(console, board)
+    if html:
+        out = ProjectFS(board.root, config).write_text(
+            config.user_config_dir / "dashboard.html", render_html(board)
+        )
+        console.print(f"Relatório HTML: [bold]{out}[/]", highlight=False)
 
 
 def _human_size(size: int) -> str:

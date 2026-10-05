@@ -178,3 +178,14 @@ def test_walk_marks_binaries_in_not_a_project() -> None:
     assert entries["photos/beach.jpg"].skipped == "binary"
     assert entries["photos/sunset.png"].skipped == "binary"
     assert entries["documents/shopping_list.txt"].skipped is None
+
+
+def test_any_virtualenv_is_excluded(pfs: ProjectFS, project: Path) -> None:
+    venv = project / ".venv-build"
+    (venv / "lib/python3.12/site-packages/pkg").mkdir(parents=True)
+    (venv / "pyvenv.cfg").write_text("home = /usr/bin\n")
+    (venv / "lib/python3.12/site-packages/pkg/mod.py").write_text("x")
+    vendored = project / "vendor/lib/site-packages"
+    vendored.mkdir(parents=True)
+    (vendored / "other.py").write_text("x")
+    assert paths(pfs) == ["main.py"]

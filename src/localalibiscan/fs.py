@@ -127,6 +127,28 @@ class ProjectFS:
 
     def walk(self) -> Iterator[FileEntry]:
         """Ficheiros que seriam analisados, em ordem determinista."""
+        for rel, path in self._iter_files():
+            try:
+                size = path.lstat().st_size
+            except OSError:
+                continue
+            yield FileEntry(
+                path=rel,
+                extension=path.suffix.lower(),
+                size=size,
+                skipped=self.skip_reason(path),
+            )
+
+    def stat_files(self) -> Iterator[tuple[str, int, int]]:
+        """(caminho, mtime_ns, tamanho) sem abrir ficheiros: base da cache."""
+        for rel, path in self._iter_files():
+            try:
+                st = path.lstat()
+            except OSError:
+                continue
+            yield rel, st.st_mtime_ns, st.st_size
+
+    def _iter_files(self) -> Iterator[tuple[str, Path]]:
         specs: dict[str, GitIgnoreSpec] = {}
 
         for dirpath, dirnames, filenames in os.walk(self.root, followlinks=False):
@@ -146,6 +168,8 @@ class ProjectFS:
                     continue
                 if (current / name).is_symlink():
                     continue
+                if any((current / name / m).exists() for m in self.config.excluded_dir_markers):
+                    continue
                 if _is_ignored(specs, rel, is_dir=True):
                     continue
                 kept_dirs.append(name)
@@ -153,19 +177,8 @@ class ProjectFS:
 
             for name in sorted(filenames):
                 rel = _join(rel_dir, name)
-                if _is_ignored(specs, rel, is_dir=False):
-                    continue
-                path = current / name
-                try:
-                    size = path.lstat().st_size
-                except OSError:
-                    continue
-                yield FileEntry(
-                    path=rel,
-                    extension=path.suffix.lower(),
-                    size=size,
-                    skipped=self.skip_reason(path),
-                )
+                if not _is_ignored(specs, rel, is_dir=False):
+                    yield rel, current / name
 
 
 def _join(rel_dir: str, name: str) -> str:

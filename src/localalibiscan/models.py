@@ -87,6 +87,11 @@ class ProjectProfile(BaseModel):
     forced: bool = False
     scanned_at: datetime
     claims: list[Claim]
+    # Cache (Fase 3): se a impressão digital não mudou, o perfil é reutilizado.
+    fingerprint: str | None = None
+    git_head: str | None = None
+    last_change: datetime | None = None
+    last_change_source: Literal["git", "files"] | None = None
 
     def get(self, claim_id: str) -> Claim | None:
         return next((c for c in self.claims if c.id == claim_id), None)

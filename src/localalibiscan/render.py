@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import shlex
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rich.console import Console
 from rich.markup import escape
 
 from .detectors.project_kind import VERDICT_LABEL, VERDICT_SYMBOL, KindResult
 from .models import Claim, Evidence, ProjectProfile
+
+if TYPE_CHECKING:
+    from .dashboard import Dashboard
 
 STATUS_STYLE = {
     "confirmed": "green",
@@ -166,3 +169,46 @@ def render_profile(console: Console, profile: ProjectProfile, *, all_evidence: b
 
 def _q(path: Any) -> str:
     return escape(shlex.quote(str(path)))
+
+
+def render_dashboard(console: Console, board: Dashboard) -> None:
+    from rich.table import Table
+
+    table = Table(title=str(board.root), title_justify="left", show_lines=False, expand=True)
+    table.add_column("Projeto", style="bold", overflow="fold", ratio=3)
+    table.add_column("Tipo", overflow="fold", ratio=2)
+    table.add_column("Stack", overflow="fold", ratio=2)
+    table.add_column("BD", overflow="fold", ratio=2)
+    table.add_column("Serviços", overflow="fold", ratio=2)
+    table.add_column("Alterado", no_wrap=True)
+    table.add_column("Alertas", no_wrap=True)
+    for row in board.rows:
+        name = ("≈ " if row.verdict == "probable_project" else "") + row.name
+        if row.error:
+            table.add_row(escape(name), "[red]erro[/]", escape(row.error), "", "", "", "")
+            continue
+        last = row.last_change.astimezone().strftime("%Y-%m-%d") if row.last_change else "?"
+        if row.profile and row.profile.last_change_source == "git":
+            last += " [dim]git[/]"
+        alerts = row.alerts
+        alert_text = " ".join(
+            t for t in (
+                f"[bold red]⚠ {alerts['contradiction']}[/]" if alerts["contradiction"] else "",
+                f"[dim]? {alerts['unknown']}[/]" if alerts["unknown"] else "",
+            ) if t
+        ) or "—"
+        table.add_row(
+            escape(name),
+            escape(row.project_type),
+            escape(", ".join(row.stack) or "—"),
+            escape(", ".join(row.databases) or "—"),
+            escape(", ".join(row.services) or "—"),
+            last,
+            alert_text,
+        )
+    console.print(table)
+    console.print(
+        f"[dim]{len(board.rows)} projetos · {board.cached_count} da cache · {board.elapsed:.2f}s · "
+        "≈ provável projeto / inferido · ⚠ contradições · ? por determinar[/]",
+        highlight=False,
+    )

@@ -22,6 +22,9 @@ Ferramenta local que diz o que cada projeto é, como está e o que mudou, e prov
 - Detetores podem ler os Claims já produzidos (`project.claims`), por categoria/id — é o contrato estável — mas nunca chamar outro detetor.
 - Código: `code/parser.py` (tree-sitter → `FileFacts`) e `code/index.py` (`code_index(project)`, resolução de imports locais, grafo de imports). Nunca se executa código analisado.
 - Tecnologias: tabela única em `tech.py` (dependências, imports, strings, env vars, ficheiros de config, nomes em docs). Regra de promoção em `detectors/technologies.py`. Para suportar uma nova tecnologia basta acrescentar uma linha a `TECHS`.
+- Painel: `dashboard.py` usa `discover_projects` de `project_kind` (sem lógica própria de descoberta) e `scan(..., use_cache=True)`. A cache compara a impressão digital (caminho+mtime+tamanho de cada ficheiro, HEAD do git, versão) guardada em `project.json`. HTML em `html_report.py`: autónomo, sem recursos externos, todo o conteúdo passa por `html.escape`.
+- Git: só através de `git.py` (lista branca `rev-parse`/`log`/`status`, `GIT_OPTIONAL_LOCKS=0`).
+- Qualquer pasta com `pyvenv.cfg` (virtualenv com outro nome) ou chamada `site-packages` é ignorada.
 - SQLite: `storage.py`; os caminhos passam por `ProjectFS.writable_path`.
 - Todo o claim que não é `unknown` tem pelo menos uma `Evidence` (há teste para isso).
 - Git só via `subprocess` com comandos de leitura (`log`, `status`, `rev-parse`).

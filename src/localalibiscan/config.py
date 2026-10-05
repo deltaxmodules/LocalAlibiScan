@@ -14,6 +14,11 @@ OUTPUT_DIR_NAME = ".localalibi"
 # Pasta de configuração do utilizador (única outra escrita permitida).
 USER_CONFIG_DIR = Path.home() / ".localalibi"
 
+# Pastas que contêm um destes ficheiros são ambientes, não código do projeto
+# (ex.: um virtualenv com outro nome, como ".venv-build").
+EXCLUDED_DIR_MARKERS: tuple[str, ...] = ("pyvenv.cfg",)
+EXCLUDED_DIR_NAMES_EXTRA: frozenset[str] = frozenset({"site-packages"})
+
 # Pastas ignoradas sempre, independentemente do .gitignore.
 FIXED_EXCLUDED_DIRS: frozenset[str] = frozenset(
     {
@@ -28,7 +33,7 @@ FIXED_EXCLUDED_DIRS: frozenset[str] = frozenset(
         "target",
         OUTPUT_DIR_NAME,
     }
-)
+) | EXCLUDED_DIR_NAMES_EXTRA
 
 # Ficheiros acima deste tamanho são registados mas não lidos.
 DEFAULT_MAX_FILE_SIZE = 1024 * 1024  # 1 MB
@@ -44,6 +49,7 @@ CEILING_MARKER = ".localalibi-ceiling"
 @dataclass(frozen=True)
 class Config:
     excluded_dirs: frozenset[str] = field(default=FIXED_EXCLUDED_DIRS)
+    excluded_dir_markers: tuple[str, ...] = EXCLUDED_DIR_MARKERS
     max_file_size: int = DEFAULT_MAX_FILE_SIZE
     user_config_dir: Path = USER_CONFIG_DIR
     # A procura da raiz nunca sobe acima desta pasta.

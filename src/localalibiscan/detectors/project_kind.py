@@ -62,10 +62,32 @@ def project_markers(folder: Path) -> list[str]:
     return markers
 
 
-def find_subprojects(folder: Path, config: Config, max_depth: int | None = None) -> list[Path]:
-    """Subpastas que são projetos (`.git` ou manifesto), sem descer dentro delas."""
+def is_probable_project(folder: Path, config: Config) -> bool:
+    """Sem .git nem manifesto, mas com código suficiente para ser um projeto."""
+    entries = islice(ProjectFS(folder, config).stat_files(), config.kind_max_files)
+    count = 0
+    for rel, _mtime, _size in entries:
+        if is_code(Path(rel).suffix.lower()):
+            count += 1
+            if count >= config.probable_min_code_files:
+                return True
+    return False
+
+
+def discover_projects(
+    folder: Path,
+    config: Config,
+    max_depth: int | None = None,
+    *,
+    include_probable: bool = False,
+) -> list[tuple[Path, Verdict]]:
+    """Subpastas que são projetos, sem descer dentro de um projeto já encontrado.
+
+    Uma pasta que não é projeto mas contém projetos é só um contentor. Se não
+    contém nenhum, pode ser um provável projeto (`include_probable`).
+    """
     max_depth = config.root_max_depth if max_depth is None else max_depth
-    found: list[Path] = []
+    found: list[tuple[Path, Verdict]] = []
 
     def visit(current: Path, depth: int) -> None:
         try:
@@ -76,12 +98,29 @@ def find_subprojects(folder: Path, config: Config, max_depth: int | None = None)
             if child.name.startswith(".") or child.name in config.excluded_dirs:
                 continue
             if project_markers(child):
-                found.append(child)
-            elif depth < max_depth:
+                found.append((child, "project"))
+                continue
+            if any((child / m).exists() for m in config.excluded_dir_markers):
+                continue
+            before = len(found)
+            if depth < max_depth:
                 visit(child, depth + 1)
+            if not include_probable or len(found) > before:
+                continue
+            # Nada encontrado abaixo: o próprio veredito decide (mesma lógica de `las check`).
+            kind = classify(child, config)
+            if kind.verdict == "probable_project":
+                found.append((child, "probable_project"))
+            elif kind.verdict == "root":
+                found.extend((sub, "project") for sub in kind.subprojects)
 
     visit(folder, 1)
-    return found
+    return sorted(found, key=lambda item: item[0])
+
+
+def find_subprojects(folder: Path, config: Config, max_depth: int | None = None) -> list[Path]:
+    """Subpastas que são projetos (`.git` ou manifesto)."""
+    return [p for p, _ in discover_projects(folder, config, max_depth)]
 
 
 def find_project_root(folder: Path, config: Config) -> Path | None:
