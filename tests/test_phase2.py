@@ -255,3 +255,14 @@ def test_tests_examples_and_templates_are_not_evidence(tmp_path: Path, config) -
     for absent in ("db.redis", "db.sqlite", "db.mongodb", "framework.react", "framework.vue", "dep.npm.mongodb"):
         assert absent not in claims, absent
     assert [c.label for c in claims.values() if c.category == "route"] == ["GET /a"]
+
+
+def test_bare_fragments_are_mentions_not_usage(tmp_path: Path, config) -> None:
+    root = write(tmp_path / "p", {
+        "requirements.txt": "\n",
+        "patterns.py": 'KNOWN = ("postgres://", "api.openai.com", ".supabase.co")\n',
+        "client.py": 'URL = "http://localhost:11434/api/generate"\n',
+    })
+    claims = claims_for(root, config)
+    assert "db.postgresql" not in claims and "service.openai" not in claims and "db.supabase" not in claims
+    assert claims["service.ollama"].evidence[0].location() == "client.py:1"

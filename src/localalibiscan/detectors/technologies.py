@@ -102,9 +102,11 @@ def tech_signals(project: Project) -> dict[str, Signals]:
                         sig.add(sig.code, project.evidence(path, call.line, "code"))
                         used += 1
         for lit in facts.strings:
-            lowered = lit.value.lower()
+            lowered = lit.value.strip().lower()
             for tech in TECHS:
-                if any(fragment in lowered for fragment in tech.strings):
+                # "postgres://" sozinho é uma menção (ex.: uma tabela como esta); só um
+                # URL ou connection string completa prova uso.
+                if lowered not in tech.strings and any(fragment in lowered for fragment in tech.strings):
                     signals[tech.id].add(signals[tech.id].code, project.evidence(path, lit.line, "code"))
 
     # 3) configuração: .env.example, docker-compose, ficheiros de config, schema.prisma

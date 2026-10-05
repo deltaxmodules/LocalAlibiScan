@@ -24,6 +24,10 @@ Ferramenta local que diz o que cada projeto é, como está e o que mudou, e prov
 - Tecnologias: tabela única em `tech.py` (dependências, imports, strings, env vars, ficheiros de config, nomes em docs). Regra de promoção em `detectors/technologies.py`. Para suportar uma nova tecnologia basta acrescentar uma linha a `TECHS`.
 - Painel: `dashboard.py` usa `discover_projects` de `project_kind` (sem lógica própria de descoberta) e `scan(..., use_cache=True)`. A cache compara a impressão digital (caminho+mtime+tamanho de cada ficheiro, HEAD do git, versão) guardada em `project.json`. HTML em `html_report.py`: autónomo, sem recursos externos, todo o conteúdo passa por `html.escape`.
 - Git: só através de `git.py` (lista branca `rev-parse`/`log`/`status`, `GIT_OPTIONAL_LOCKS=0`).
+- Código em pastas de testes/exemplos/playgrounds/templates (`knowledge.NON_PRODUCT_DIRS`) nunca é evidência de tecnologias, rotas, dependências ou componentes.
+- Literais de texto só provam uso se forem URL/connection string completos (o fragmento sozinho, ex. `"postgres://"`, é uma menção).
+- Mudanças na lógica de deteção: subir `__version__` (faz parte da impressão digital da cache).
+- Configuração do utilizador: `~/.localalibi/config.toml` (`config.load_config`); os testes isolam-na com `LOCALALIBI_CONFIG` (fixture autouse em `conftest.py`).
 - Qualquer pasta com `pyvenv.cfg` (virtualenv com outro nome) ou chamada `site-packages` é ignorada.
 - Documentação vs código: `doc_mentions.py` (extrator) + `detectors/docs_vs_code.py`. Limitações em `docs/limitacoes.md` — atualizar quando se muda uma heurística.
 - Histórico: `history.py` (`history.db`: snapshot por análise real com Claims + hash de ficheiros; `diff_snapshots` traduz para "+/-/~/⚠"). Uma análise vinda da cache não cria snapshot.
@@ -48,3 +52,6 @@ uv venv -p 3.12 .venv && uv pip install -p .venv -e '.[dev]'
 - Usar a fixture `config` (pasta pessoal isolada em tmp) nos testes que chamam `classify`/`scan`.
 - Testes que analisam fixtures devem confirmar só leitura com `tree_hash` antes/depois.
 - Depois de cada fase: rever, commit com a etiqueta `fase-N`.
+- CI (`.github/workflows/ci.yml`): pytest em Linux/macOS/Windows e instalação limpa com pipx. Os ficheiros de saída do produto indicam sempre `encoding="utf-8"`.
+- Página de exemplo: `docs/example/index.html` (GitHub Pages a partir de `docs/`). Capturas em `docs/img/` (SVG exportado pelo Rich).
+- Publicação no PyPI: `.github/workflows/publish.yml` (trusted publishing ao publicar uma release). A licença ainda está por decidir.

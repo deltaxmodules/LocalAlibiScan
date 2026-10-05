@@ -6,8 +6,22 @@ build-backend = "hatchling.build"
 name = "localalibiscan"
 version = "0.1.0"
 description = "Every claim has an alibi. Local tool that profiles every project on your disk and proves each claim with file and line."
-readme = "SPEC.md"
+readme = "README.md"
 requires-python = ">=3.11"
+authors = [{ name = "deltaxmodules" }]
+keywords = ["cli", "code-analysis", "dashboard", "documentation", "tree-sitter", "developer-tools"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Utilities",
+]
 dependencies = [
     "typer>=0.12",
     "rich>=13.7",
@@ -16,6 +30,11 @@ dependencies = [
     "tree-sitter>=0.23",
     "tree-sitter-language-pack>=0.9",
 ]
+
+[project.urls]
+Homepage = "https://github.com/deltaxmodules/LocalAlibiScan"
+Issues = "https://github.com/deltaxmodules/LocalAlibiScan/issues"
+Example = "https://deltaxmodules.github.io/LocalAlibiScan/example/"
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
@@ -26,6 +45,9 @@ las = "localalibiscan.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/localalibiscan"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/", "tests/", "docs/", "README.md", "SPEC.md", "CLAUDE.md", "pyproject.toml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
