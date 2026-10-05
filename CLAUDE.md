@@ -38,6 +38,7 @@ Ferramenta local que diz o que cada projeto é, como está e o que mudou, e prov
 - Git só via `subprocess` com comandos de leitura (`log`, `status`, `rev-parse`).
 - Constantes e limiares vivem em `src/localalibiscan/config.py`.
 - Línguas (Fase 9): todo o texto mostrado ao utilizador passa por `i18n.t`/`tn` com chaves em `locales/en.py` (obrigatório) e `locales/pt.py`. Os detetores nunca escrevem texto solto: usam `label_key`/`value_key`/`note_key` + `params` em `Detector.claim` e `gen_evidence` para excertos gerados; grava-se o texto em inglês e traduz-se só ao mostrar (`claim_label`, `claim_note`, `claim_text_value`, `evidence_snippet`). A língua não entra na impressão digital da cache. `tests/test_i18n.py` falha se uma chave usada faltar em `en`.
+- Interface gráfica (Fase 10): `ui.py` (Streamlit, extra opcional `[ui]`), só apresentação — chama o núcleo, sem lógica própria. `las ui` (`cli.ui_command`) fixa na linha de comandos `127.0.0.1` e `gatherUsageStats=false` e corre com `cwd=~/.localalibi`. Texto do projeto analisado nunca vai para Markdown sem `ui.md()` (escapa tudo; nada de `unsafe_allow_html`). Chaves de texto em `gui.*`. Testes em `tests/test_ui.py` com `streamlit.testing`.
 - Capturas do README/manual e página de exemplo: `scripts/gen_captures.py` (refazer quando muda um texto que aparece nelas).
 
 ## Desenvolvimento

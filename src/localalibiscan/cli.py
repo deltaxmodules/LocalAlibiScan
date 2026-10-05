@@ -355,6 +355,60 @@ def config(
         console.print(f"  {label}: [bold]{escape(value)}[/]", highlight=False)
 
 
+# Fase 10: regras fixadas na linha de comandos do Streamlit, que ganha a qualquer
+# ficheiro de configuração (ex.: um `.streamlit/config.toml` alheio).
+UI_FLAGS: tuple[tuple[str, str], ...] = (
+    ("server.address", "127.0.0.1"),  # só esta máquina
+    ("browser.serverAddress", "127.0.0.1"),
+    ("browser.gatherUsageStats", "false"),  # regra "sem rede"
+    ("server.headless", "true"),  # sem pedido de email; o browser abre-o a CLI
+    ("server.fileWatcherType", "none"),
+    ("server.runOnSave", "false"),
+    ("client.toolbarMode", "minimal"),
+    ("global.developmentMode", "false"),
+)
+
+
+def ui_command(folder: Path, port: int) -> list[str]:
+    """`python -m streamlit run ui.py …`: a interface corre noutro processo."""
+    script = Path(__file__).with_name("ui.py")
+    flags = [f"--{name}={value}" for name, value in (*UI_FLAGS, ("server.port", str(port)))]
+    return [sys.executable, "-m", "streamlit", "run", str(script), *flags, "--", str(folder)]
+
+
+@app.command(help=t("cli.ui.help"))
+def ui(
+    folder: FolderArg = Path("."),
+    port: Annotated[int, typer.Option("--port", help=t("cli.opt.port"))] = 8501,
+    no_browser: Annotated[bool, typer.Option("--no-browser", help=t("cli.opt.no_browser"))] = False,
+) -> None:
+    import importlib.util
+    import os
+    import subprocess
+    import threading
+    import webbrowser
+
+    if importlib.util.find_spec("streamlit") is None:
+        console.print(t("cli.ui.missing"), highlight=False)
+        console.print("  [bold]pipx install 'localalibiscan\\[ui]' --force[/]", highlight=False)
+        console.print("  [dim]pip install 'localalibiscan\\[ui]'[/]", highlight=False)
+        raise typer.Exit(code=2)
+
+    config = load_config()
+    # A pasta de trabalho é a nossa: o Streamlit não lê o `.streamlit/` do projeto analisado.
+    workdir = Path(config.user_config_dir).expanduser()
+    workdir.mkdir(parents=True, exist_ok=True)
+    env = {**os.environ, "STREAMLIT_BROWSER_GATHER_USAGE_STATS": "false", "LOCALALIBI_LANG": i18n.current()}
+    url = f"http://127.0.0.1:{port}"
+    console.print(t("cli.ui.starting", url=url), highlight=False)
+    if not no_browser:
+        threading.Timer(1.5, webbrowser.open, (url,)).start()
+    try:
+        subprocess.run(ui_command(Path(folder).resolve(), port), cwd=workdir, env=env, check=False)
+    except KeyboardInterrupt:
+        pass
+
+
 def _human_size(size: int) -> str:
     value = float(size)
     for unit in ("B", "KB", "MB", "GB"):

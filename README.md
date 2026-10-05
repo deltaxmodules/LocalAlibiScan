@@ -41,6 +41,14 @@ pipx install localalibiscan
 Python 3.11+ on macOS, Linux or Windows. The commands `localalibiscan` and the
 shortcut `las` are equivalent.
 
+Prefer a window to a terminal? The optional graphical interface (Streamlit) adds
+`las ui`:
+
+```bash
+pipx install 'localalibiscan[ui]'
+las ui ~/code                   # opens http://127.0.0.1:8501 in your browser
+```
+
 ## Quick start
 
 ```bash
@@ -53,6 +61,7 @@ las explain ~/code/my-app       # "explain this project": fixed questions answer
 las ask ~/code/my-app "Where is authentication done?"
 las files ~/code/my-app         # files that would be analysed (respects .gitignore)
 las config --init               # create ~/.localalibi/config.toml
+las ui ~/code                   # the same, in a local graphical interface (extra [ui])
 ```
 
 `las dashboard --html` writes a single self-contained file to
@@ -116,7 +125,8 @@ Known limitations are listed in [`docs/limitacoes.md`](https://github.com/deltax
   itself in git) and `~/.localalibi/`. Any other write raises an exception.
 - **Never runs project code** — no scripts, tests or `npm install`. Git is only
   used through read commands (`rev-parse`, `log`, `status`).
-- **No network**, except an optional Ollama server on `localhost`.
+- **No network**, except an optional Ollama server on `localhost`. The optional
+  interface (`las ui`) listens on `127.0.0.1` only and has usage statistics turned off.
 - **The LLM never creates facts.** It receives claims (never code), must cite
   claim ids (or `file:line` in `las ask`), and a validator drops every sentence
   without a valid citation. Without Ollama, you get facts only.

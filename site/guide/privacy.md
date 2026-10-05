@@ -15,6 +15,8 @@ No scripts, no tests, no `npm install`, no imports of your modules. Code is pars
 
 The only network call the tool can make is to an Ollama server, and the client refuses any address that isn't `localhost`, `127.0.0.1` or `::1`. The HTML report loads nothing from the internet.
 
+The optional [graphical interface](./ui) is a local web server: `las ui` starts it bound to `127.0.0.1` only, with Streamlit's usage statistics turned off, and these settings are passed on its command line so no configuration file can override them. Text from the analysed project is never rendered as Markdown or HTML (an image link would be a network request).
+
 ## What the local model sees
 
 - [`las explain`](./explain): claims only (ids, labels, values, statuses) — no code.

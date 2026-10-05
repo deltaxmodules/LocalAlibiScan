@@ -42,6 +42,7 @@ export default defineConfig({
           { text: 'One project in depth', link: '/guide/scan' },
           { text: 'Documentation that lies', link: '/guide/docs-vs-code' },
           { text: 'What changed', link: '/guide/refresh' },
+          { text: 'Graphical interface', link: '/guide/ui' },
         ],
       },
       {

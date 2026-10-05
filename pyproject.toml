@@ -11,7 +11,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [{ name = "deltaxmodules" }]
-keywords = ["cli", "code-analysis", "dashboard", "documentation", "tree-sitter", "developer-tools"]
+keywords = ["cli", "streamlit", "code-analysis", "dashboard", "documentation", "tree-sitter", "developer-tools"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
@@ -39,7 +39,9 @@ Issues = "https://github.com/deltaxmodules/LocalAlibiScan/issues"
 Example = "https://deltaxmodules.github.io/LocalAlibiScan/example/"
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+# Fase 10: interface gráfica local (`las ui`).
+ui = ["streamlit>=1.46"]
+dev = ["pytest>=8", "streamlit>=1.46"]
 
 [project.scripts]
 localalibiscan = "localalibiscan.cli:main"

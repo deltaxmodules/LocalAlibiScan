@@ -10,6 +10,7 @@ Este documento serve de guia para construir o LocalAlibiScan com o Claude Code, 
 | Fase | Estado | Etiqueta |
 |---|---|---|
 | 0 a 9 | Feitas | `fase-0` … `fase-9` |
+| 10 | Feita | `fase-10` |
 
 Publicado: PyPI `localalibiscan` 0.1.2 (MIT); a 0.2.0 traz a Fase 9. Feito para além do pedido nas fases: comando `las config`, manual em inglês (`site/`, VitePress, no GitHub Pages) com a referência gerada a partir do código, vídeo e GIF de demonstração (`scripts/demo-video.sh`), marca (logótipo e ícones) e CI em Linux/macOS/Windows.
 
@@ -374,6 +375,31 @@ A fixture `node_sqlite_lying_readme` serve também para testar o caso "subpasta"
 - [x] Teste de chaves em falta passa; `pytest` passa; README e manual sem aviso de português.
 
 **Fora desta fase:** outras línguas além de `en` e `pt` (o mecanismo tem de as permitir, mas não se traduzem agora); tradução de texto da documentação do projeto analisado.
+
+---
+
+## FASE 10 — Interface gráfica local (Streamlit, opcional)
+
+**Objetivo:** quem não vive no terminal consegue ver o painel, cada projeto com as suas provas, o que mudou, a explicação e as perguntas numa interface no browser, **sem que a ferramenta deixe de cumprir nenhuma regra da secção 2**.
+
+**Entregar:**
+- Comando `las ui [pasta]` que arranca uma interface Streamlit e abre o browser. Opções `--port` (por omissão 8501) e `--no-browser`.
+- Streamlit é um **extra opcional**: `pipx install 'localalibiscan[ui]'`. A instalação base não muda. Sem o extra, `las ui` explica como o instalar e sai com código 2.
+- Um único módulo `ui.py`, **só apresentação**: chama `classify`, `build_dashboard`, `scan(..., use_cache=True)`, `list_snapshots`/`diff_snapshots`, `drafting.explain` e `ask.ask`. Nenhuma lógica de deteção nova.
+- Ecrãs: painel (tabela com filtro por texto e linguagem, escolha de um projeto), perfil (secções, estado de cada afirmação, filtro por estado, evidências com excerto do ficheiro à volta da linha), histórico (análises anteriores e diferenças), explicação e perguntas (LLM opcional, com as mesmas validações da CLI). Botão para reanalisar.
+- Regras fixadas pelo comando, na linha de comandos do Streamlit (ganha a qualquer ficheiro de configuração): `server.address=127.0.0.1`, `browser.gatherUsageStats=false`, `server.headless=true`, `server.fileWatcherType=none`, `server.runOnSave=false`. O processo corre com a pasta de trabalho em `~/.localalibi/`, para não ler um `.streamlit/config.toml` do projeto analisado.
+- Texto vindo do projeto analisado (rótulos, valores, excertos, respostas da LLM) nunca é interpretado como Markdown/HTML: vai em blocos de código, tabelas ou Markdown escapado (uma imagem em Markdown faria um pedido de rede).
+- Línguas: textos novos em `locales/` (chaves `gui.*`), escolha de língua na própria interface.
+
+**Verificação:**
+- [x] `las ui tests/fixtures/projects_root` mostra os 4 projetos; escolher um mostra o perfil com evidências.
+- [x] O servidor só escuta em `127.0.0.1` e não envia estatísticas (argumentos verificados em teste).
+- [x] Sem Streamlit instalado, `las ui` mostra como instalar o extra e sai com código 2; o resto da CLI funciona.
+- [x] Teste da app com `streamlit.testing` (sem browser) num projeto e numa raiz, com `tree_hash` igual antes e depois.
+- [x] Nenhum `unsafe_allow_html` no código; texto do projeto escapado.
+- [x] `pytest` passa; manual com página da interface; referência de comandos gerada de novo.
+
+**Fora desta fase:** editar a configuração na interface, acesso remoto (outra máquina), autenticação, vários utilizadores.
 
 ---
 

@@ -14,6 +14,12 @@ pipx install localalibiscan
 las --version
 ```
 
+Prefer a window to a terminal? Install the optional extra and use [`las ui`](./ui):
+
+```bash
+pipx install 'localalibiscan[ui]'
+```
+
 Nothing else is required. A local model ([Ollama](https://ollama.com)) is optional and only used by [`las explain`](./explain) and [`las ask`](./ask).
 
 ## Your first dashboard

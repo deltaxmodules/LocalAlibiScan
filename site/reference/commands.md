@@ -15,6 +15,7 @@ Every command is available as `las` and as `localalibiscan`. `FOLDER` defaults t
 | [`las explain`](#las-explain) | [Explain this project](../guide/explain): fixed questions answered with facts (and optional local AI). |
 | [`las ask`](#las-ask) | [Ask a question](../guide/ask): deterministic search first; the optional local model answers only from the evidence. |
 | [`las config`](#las-config) | Show the configuration in use; `--init` creates `~/.localalibi/config.toml`. |
+| [`las ui`](#las-ui) | Open the [local graphical interface](../guide/ui) in the browser (optional extra `localalibiscan[ui]`). |
 
 ## Global options
 
@@ -130,6 +131,19 @@ Show the configuration in use; `--init` creates `~/.localalibi/config.toml`.
 | Option | |
 |---|---|
 | `--init` | Create `~/.localalibi/config.toml` with the defaults (never overwrites). |
+
+## las ui
+
+```bash
+las ui FOLDER [OPTIONS]
+```
+
+Open the [local graphical interface](../guide/ui) in the browser (optional extra `localalibiscan[ui]`). Listens on 127.0.0.1 only and sends no usage statistics.
+
+| Option | |
+|---|---|
+| `--port` | Port for the local interface (default 8501; only 127.0.0.1 listens). |
+| `--no-browser` | Don't open the browser; just print the address. |
 
 ## Exit codes
 

@@ -30,6 +30,7 @@ COMMAND_DOCS = {
     "history": "List previous analyses with a one-line summary each.",
     "explain": "[Explain this project](../guide/explain): fixed questions answered with facts (and optional local AI). Writes `.localalibi/overview.md`.",
     "ask": "[Ask a question](../guide/ask): deterministic search first; the optional local model answers only from the evidence.",
+    "ui": "Open the [local graphical interface](../guide/ui) in the browser (optional extra `localalibiscan[ui]`). Listens on 127.0.0.1 only and sends no usage statistics.",
     "config": "Show the configuration in use; `--init` creates `~/.localalibi/config.toml`.",
 }
 OPTION_DOCS = {
@@ -45,6 +46,8 @@ OPTION_DOCS = {
     "--brief": "One line per piece of evidence, without code excerpts.",
     "--init": "Create `~/.localalibi/config.toml` with the defaults (never overwrites).",
     "--max-size": "Maximum size in bytes for a file to be read.",
+    "--port": "Port for the local interface (default 8501; only 127.0.0.1 listens).",
+    "--no-browser": "Don't open the browser; just print the address.",
     "--version": "Show the version and exit.",
     "--lang-ui": "Interface language: `en` (default) or `pt`. Goes before the command: `las --lang-ui pt scan .`. Same as `LOCALALIBI_LANG` or `[ui] language` in the [configuration](configuration).",
 }

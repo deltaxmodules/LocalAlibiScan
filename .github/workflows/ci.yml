@@ -58,6 +58,7 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           las --help
           las check tests/fixtures/not_a_project
+          las ui --help
           las scan tests/fixtures/python_fastapi_openai
           las dashboard tests/fixtures/projects_root --html
           test -f "$HOME/.localalibi/dashboard.html"
